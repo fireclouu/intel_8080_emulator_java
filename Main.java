@@ -6,7 +6,7 @@ public class Main
 {
 	static CpuEmulation cpu;
 	
-	final static String STORAGE_INTERNAL = "~/src/";
+	final static String STORAGE_INTERNAL = "~/src/"; // Change path
 	final static String FILE_NAME = "invaders";
 	
 	public static void main(String[] args) {
@@ -36,7 +36,7 @@ public class Main
 	// Load ROM
 	private static int[] loadRom(String romName) {
 		InputStream file = null;
-		int tmp[] = new int[RomInfo.length];
+		int tmp[] = new int[RomInfo.length + 0x2000];
 		
 		try
 		{
