@@ -2,7 +2,12 @@ import Cpu.*;
 
 public class CpuEmulation
 {
-	// TODO:
+	// NOTES
+	/*
+	   - Use objects as parameter for function/subroutine when re-assigning (e.g. *someobject*.value = *somevariable*)
+	   since there's no pointer in java
+	   - strict handling of x > 0xff, java only has signed data types
+	*/
 	
 	///  DECLARE CPU COMPONENTS  ///
 	public static Component B, C, D, E, H, L, A;
@@ -56,6 +61,9 @@ public class CpuEmulation
 			printInstruction(opcode);
 			
 			switch(memory[opcode]) {
+				
+				/////   0x00 - 0x0f   /////
+				
 				case 0x00:
 					break; // NOP
 				case 0x01:
@@ -84,6 +92,8 @@ public class CpuEmulation
 					}
 					
 					break; // RLC
+				case 0x08:
+					break; // -
 				case 0x09:
 					DAD(B, C);
 					break; //DAD B
@@ -110,6 +120,11 @@ public class CpuEmulation
 					}
 					
 					break; // RRC
+					
+				//////   0x10 - 0x1f   /////
+					
+				case 0x10:
+					break; // -
 				case 0x11:
 					LXI(opcode, D, E);
 					break; // LXI D, D16
@@ -148,6 +163,9 @@ public class CpuEmulation
 				case 0x1e:
 					MVI(opcode, E);
 					break; // MVI E, D8
+					
+				//////   0x20 - 0x2f   /////
+					
 				case 0x20:
 					break; // -
 				case 0x21:
@@ -180,6 +198,9 @@ public class CpuEmulation
 				case 0x2e:
 					MVI(opcode, L);
 					break; // MVI L, D8
+					
+				//////   0x30 - 0x3f   /////
+					
 				case 0x31:
 					LXI(opcode, SP);
 					break; // LXI SP, D16
@@ -215,6 +236,8 @@ public class CpuEmulation
 				case 0x3e:
 					MVI(opcode, A);
 					break; // MVI A, D8
+					
+				//////   0x40 - 0x4f   /////
 					
 				case 0x40:
 					B.value = B.value;
@@ -264,6 +287,9 @@ public class CpuEmulation
 				case 0x4f:
 					C.value = A.value;
 					break; // MOV C, A
+					
+				//////   0x50 - 0x5f   /////
+					
 				case 0x50:
 					D.value = B.value;
 					break; // MOV D, B
@@ -312,6 +338,9 @@ public class CpuEmulation
 				case 0x5f:
 					E.value = A.value;
 					break; // MOV E, A
+					
+				//////   0x60 - 0x6f   /////
+					
 				case 0x60:
 					H.value = B.value;
 					break; // MOV H, B
@@ -360,6 +389,9 @@ public class CpuEmulation
 				case 0x6f:
 					L.value = A.value;
 					break; // MOV L, A
+					
+				//////   0x70 - 0x7f   /////
+					
 				case 0x70:
 					memory[addr] = B.value;
 					break; // MOV M, B
@@ -407,6 +439,9 @@ public class CpuEmulation
 				case 0x7f:
 					A.value = A.value;
 					break; // MOV A, A
+					
+				//////   0x80 - 0x8f   /////
+					
 				case 0x80:
 					ADD(B.value);
 					break; // ADD B
@@ -431,6 +466,12 @@ public class CpuEmulation
 				case 0x87:
 					ADD(A.value);
 					break; // ADD A
+					
+				//////   0x90 - 0x9f   /////
+					
+				
+				//////   0xa0 - 0xaf   /////
+				
 				case 0xa8:
 					XRA(B.value);
 					break; // XRA B
@@ -455,6 +496,11 @@ public class CpuEmulation
 				case 0xaf:
 					XRA(A.value);
 					break; // XRA A
+					
+				//////   0xb0 - 0xbf   /////
+					
+				//////   0xc0 - 0xcf   /////
+				
 				case 0xc1:
 					POP(B, C);
 					break; // POP B
@@ -481,6 +527,9 @@ public class CpuEmulation
 				case 0xcd:
 					CALL(opcode);
 					break; // CALL adr
+					
+				//////   0xd0 - 0xdf   /////
+					
 				case 0xd1:
 					POP(D, E);
 					break; // POP D
@@ -490,6 +539,9 @@ public class CpuEmulation
 				case 0xd5:
 					PUSH(D, E);
 					break; // PUSH D
+					
+				//////   0xe0 - 0xef   /////
+					
 				case 0xe1:
 					POP(H, L);
 					break; // POP H
@@ -509,6 +561,9 @@ public class CpuEmulation
 				case 0xeb:
 					XCHG();
 					break; // XCHG (HL to DE vice-versa)
+					
+				//////   0xf0 - 0xff   /////
+					
 				case 0xf1:
 					POP_PSW();
 					break; // POP PSW
@@ -530,6 +585,9 @@ public class CpuEmulation
 		String inst = null;
 		
 		switch(memory[opcode]) {
+			
+			// 0x00 - 0x0f
+			
 			case 0x00:
 				inst = "NOP";
 				break;
@@ -554,6 +612,9 @@ public class CpuEmulation
 			case 0x07:
 				inst = "RLC";
 				break;
+			case 0x08:
+				inst = " - ";
+				break;
 			case 0x09:
 				inst = "DAD B";
 				break;
@@ -574,6 +635,12 @@ public class CpuEmulation
 				break;
 			case 0x0f:
 				inst = "RRC";
+				break;
+				
+			// 0x10 - 0x1f
+				
+			case 0x10:
+				inst = " - ";
 				break;
 			case 0x11:
 				inst = "LXI D, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
@@ -1010,12 +1077,12 @@ public class CpuEmulation
 	}
 	
 	// Dedicate individual flag checks
-	private void CMP(int opcode) {
+	private void CMP(int var) {
 		// a + (two comp. immediate)
 		// complement — defined also as "another set" e.g. another set of binary 1 is binary 0!
 		// similar to a - immediate
 		// int twoComp = ((~opbyte & 0xff) + 1);
-		int res = A.value - opcode;
+		int res = A.value - var;
 		
 		Z.flag = (res == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
@@ -1256,7 +1323,7 @@ public class CpuEmulation
 	}
 	
 	private byte parityFlag(int result) {
-		int res = Integer.toBinaryString(result).replaceAll("0", "").length();
+		int res = Integer.toBinaryString(result).replaceAll("0", "").length(); // Simple workaround to get count of flipped binary
 		return (res % 2 == 0) ? (byte) 1 : 0;
 	}
 	
