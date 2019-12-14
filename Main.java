@@ -15,7 +15,7 @@ public class Main
 	
 	private static CpuEmulation cpu;
 	
-	final static String STORAGE_INTERNAL = "~/src/";
+	final static String STORAGE_INTERNAL = "/sdcard/AppProjects/raw8080v2/src/";
 	final static String FILE_NAME = "invaders";
 	
 	public static void main(String[] args) {

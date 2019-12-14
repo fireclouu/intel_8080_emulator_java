@@ -8,6 +8,21 @@ public class CpuEmulation
 	public static Flags Z, S, P, CY, AC;
 	private int[] memory;
 	
+	///  PSW FLAG POSITIONS  ///
+	final static int 
+	PSW_FLAG_POS_CY = 0b_0000_0001, // on bit pos 0
+	PSW_FLAG_POS_PA = 0b_0000_0100, // on bit pos 2
+	PSW_FLAG_POS_AC = 0b_0001_0000, // on bit pos 4
+	PSW_FLAG_POS_ZE = 0b_0100_0000, // on bit pos 6
+	PSW_FLAG_POS_SN = 0b_1000_0000; // on bit pos 7
+	/* 
+	 pos 0 = carry
+	 pos 2 = parity
+	 pos 4 = aux carry
+	 pos 6 = zero
+	 pos 7 = sign
+	 */
+	
 	///  CONSTRUCTOR  ///
 	public CpuEmulation(int[] rom) {
 		init();
@@ -35,7 +50,7 @@ public class CpuEmulation
 			// print instruction
 			printInstruction(opcode);
 			
-			switch(getInstruction(opcode)) {
+			switch(memory[opcode]) {
 				case 0x00:
 					break; // NOP
 				case 0x01:
@@ -53,6 +68,9 @@ public class CpuEmulation
 				case 0x06:
 					MVI(opcode, B);
 					break; // MVI B, D8
+				case 0x09:
+					DAD(B, C);
+					break; //DAD B
 				case 0x0a:
 					LDAX(B, C);
 					break; // LDAX B
@@ -83,6 +101,11 @@ public class CpuEmulation
 				case 0x16:
 					MVI(opcode, D);
 					break; // MVI D, D8
+				case 0x18:
+					break; // -
+				case 0x19:
+					DAD(D, E);
+					break; //DAD D
 				case 0x1a:
 					LDAX(D, E);
 					break; // LDAX D
@@ -115,6 +138,9 @@ public class CpuEmulation
 				case 0x26:
 					MVI(opcode, H);
 					break; // MVI H, D8
+				case 0x29:
+					DAD(H, L);
+					break; //DAD H
 				case 0x2b:
 					DCX(H, L);
 					break; // DCX H
@@ -142,6 +168,9 @@ public class CpuEmulation
 				case 0x36:
 					MVI(opcode, addr);
 					break; // MVI M, D8
+				case 0x39:
+					DAD(SP);
+					break; //DAD SP
 				case 0x3b:
 					DCX(SP);
 					break; // DCX SP
@@ -343,22 +372,40 @@ public class CpuEmulation
 				case 0x7f:
 					A.value = A.value;
 					break; // MOV A, A
+				case 0xc1:
+					POP(B, C);
+					break; // POP B
 				case 0xc2:
 					if(Z.flag == 0) {
-						PC.value = (getInstruction(opcode + 2) << 8) | getInstruction(opcode + 1);
+						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
 					} else {
 						PC.value += 2;
 					}
 					break; // JNZ adr
 				case 0xc3:
-					PC.value = (getInstruction(opcode + 2) << 8) | getInstruction(opcode + 1);
+					PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
 					break; // JMP adr
+				case 0xc5:
+					PUSH(B, C);
+					break; // PUSH B
 				case 0xc9:
 					RET();
 					break; // RET
 				case 0xcd:
 					CALL(opcode);
 					break; // CALL adr
+				case 0xd1:
+					POP(D, E);
+					break; // POP D
+				case 0xd3:
+					PC.value++;
+					break; // OUT D8
+				case 0xd5:
+					PUSH(D, E);
+					break; // PUSH D
+				case 0xe1:
+					POP(H, L);
+					break; // POP H
 				case 0xe4:
 					if (P.flag == 0) {
 						CALL(opcode);
@@ -366,6 +413,18 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // CPO adr
+				case 0xe5:
+					PUSH(H, L);
+					break; // PUSH H
+				case 0xeb:
+					XCHG();
+					break; // XCHG (HL to DE vice-versa)
+				case 0xf1:
+					POP_PSW();
+					break; // POP PSW
+				case 0xf5:
+					PUSH_PSW();
+					break; // PUSH PSW
 				case 0xfe:
 					CMP(memory[opcode + 1]);
 					break; // CPI D8
@@ -380,12 +439,12 @@ public class CpuEmulation
 	public void printInstruction(int opcode) {
 		String inst = null;
 		
-		switch(getInstruction(opcode)) {
+		switch(memory[opcode]) {
 			case 0x00:
 				inst = "NOP";
 				break;
 			case 0x01:
-				inst = "LXI B, #" + toHex02(getInstruction(opcode + 2)) + toHex02(getInstruction(opcode + 1));
+				inst = "LXI B, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
 			case 0x03:
 				inst = "INX B";
@@ -397,7 +456,10 @@ public class CpuEmulation
 				inst = "DCR B";
 				break;
 			case 0x06:
-				inst = "MVI B, #" + toHex02(getInstruction(opcode + 1));
+				inst = "MVI B, #" + toHex02(memory[opcode + 1]);
+				break;
+			case 0x09:
+				inst = "DAD B";
 				break;
 			case 0x0a:
 				inst = "LDAX B";
@@ -412,10 +474,10 @@ public class CpuEmulation
 				inst = "DCR C";
 				break;
 			case 0x0e:
-				inst = "MVI C, #" + toHex02(getInstruction(opcode + 1));
+				inst = "MVI C, #" + toHex02(memory[opcode + 1]);
 				break;
 			case 0x11:
-				inst = "LXI D, #" + toHex02(getInstruction(opcode + 2)) + toHex02(getInstruction(opcode + 1));
+				inst = "LXI D, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
 			case 0x13:
 				inst = "INX D";
@@ -427,7 +489,13 @@ public class CpuEmulation
 				inst = "DCR D";
 				break;
 			case 0x16:
-				inst = "MVI D, #" + toHex02(getInstruction(opcode + 1));
+				inst = "MVI D, #" + toHex02(memory[opcode + 1]);
+				break;
+			case 0x18:
+				inst = " - ";
+				break;
+			case 0x19:
+				inst = "DAD D";
 				break;
 			case 0x1a:
 				inst = "LDAX D";
@@ -442,13 +510,13 @@ public class CpuEmulation
 				inst = "DCR E";
 				break;
 			case 0x1e:
-				inst = "MVI E, #" + toHex02(getInstruction(opcode + 1));
+				inst = "MVI E, #" + toHex02(memory[opcode + 1]);
 				break;
 			case 0x20:
 				inst = " - ";
 				break;
 			case 0x21:
-				inst = "LXI H, #" + toHex02(getInstruction(opcode + 2)) + toHex02(getInstruction(opcode + 1));
+				inst = "LXI H, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
 			case 0x23:
 				inst = "INX H";
@@ -460,7 +528,10 @@ public class CpuEmulation
 				inst = "DCR H";
 				break;
 			case 0x26:
-				inst = "MVI H, #" + toHex02(getInstruction(opcode + 1));
+				inst = "MVI H, #" + toHex02(memory[opcode + 1]);
+				break;
+			case 0x29:
+				inst = "DAD H";
 				break;
 			case 0x2b:
 				inst = "DCX H";
@@ -472,10 +543,10 @@ public class CpuEmulation
 				inst = "DCR L";
 				break;
 			case 0x2e:
-				inst = "MVI L, #" + toHex02(getInstruction(opcode + 1));
+				inst = "MVI L, #" + toHex02(memory[opcode + 1]);
 				break;
 			case 0x31:
-				inst = "LXI SP, #" + toHex02(getInstruction(opcode + 2)) + toHex02(getInstruction(opcode + 1));
+				inst = "LXI SP, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
 			case 0x33:
 				inst = "INX SP";
@@ -487,7 +558,10 @@ public class CpuEmulation
 				inst = "DCR M";
 				break;
 			case 0x36:
-				inst = "MVI M, #" + toHex02(getInstruction(opcode + 1));
+				inst = "MVI M, #" + toHex02(memory[opcode + 1]);
+				break;
+			case 0x39:
+				inst = "DAD SP";
 				break;
 			case 0x3b:
 				inst = "DCX SP";
@@ -496,7 +570,7 @@ public class CpuEmulation
 				inst = "DCR A";
 				break;
 			case 0x3e:
-				inst = "MVI A, #" + toHex02(getInstruction(opcode + 1));
+				inst = "MVI A, #" + toHex02(memory[opcode + 1]);
 				break;
 			case 0x40:
 				inst = "MOV B, B";
@@ -690,26 +764,56 @@ public class CpuEmulation
 			case 0x7f:
 				inst = "MOV A, A";
 				break;
+			case 0xc1:
+				inst = "POP B";
+				break;
 			case 0xc2:
-				inst = "JNZ $" + toHex04((getInstruction(opcode+2) << 8) + getInstruction(opcode+1)) + " | ZF: " + Z.flag;
+				inst = "JNZ $" + toHex04((memory[opcode+2] << 8) + memory[opcode+1]) + " | ZF: " + Z.flag;
 				break;
 			case 0xc3:
-				inst = "JMP $" + toHex04((getInstruction(opcode+2) << 8) + getInstruction(opcode+1));
+				inst = "JMP $" + toHex04((memory[opcode+2] << 8) + memory[opcode+1]);
+				break;
+			case 0xc5:
+				inst = "PUSH B";
 				break;
 			case 0xc9:
 				inst = "RET";
 				break;
 			case 0xcd:
-				inst = "CALL $" + toHex04((getInstruction(opcode+2) << 8) + getInstruction(opcode+1));
+				inst = "CALL $" + toHex04((memory[opcode+2] << 8) + memory[opcode+1]);
+				break;
+			case 0xd1:
+				inst = "POP D";
+				break;
+			case 0xd3:
+				inst = "OUT #" + toHex02(memory[opcode + 1]);
+				break; // PORT?
+			case 0xd5:
+				inst = "PUSH D";
+				break;
+			case 0xe1:
+				inst = "POP H";
 				break;
 			case 0xe4:
-				inst = "CPO $" + toHex04((getInstruction(opcode + 2) << 8) + getInstruction(opcode + 1));
+				inst = "CPO $" + toHex04((memory[opcode + 2] << 8) + memory[opcode + 1]);
+				break;
+			case 0xe5:
+				inst = "PUSH H";
+				break; 
+			case 0xeb:
+				inst = "XCHG";
+				break;
+			case 0xf1:
+				inst = "POP PSW";
+				break;
+			case 0xf5:
+				inst = "PUSH PSW";
 				break;
 			case 0xfe:
-				inst = "CPI #" + toHex02(getInstruction(opcode + 1));
+				inst = "CPI #" + toHex02(memory[opcode + 1]);
 				break;
 			default:
-				inst = "" + toHex02(getInstruction(opcode)) + " is not implemented!";
+				inst = "" + toHex02(memory[opcode]) + " is not implemented!";
 		}
 		
 		System.out.println("SP: " + toHex04(SP.value) + " | " + toHex04(opcode) + ": " + inst);
@@ -721,9 +825,9 @@ public class CpuEmulation
 		int nextAddr = opcode + 3;
 		memory[SP.value - 1] = ((nextAddr >> 8) & 0xff); // Store rightmost 8bit addr
 		memory[SP.value - 2] = (nextAddr & 0xff);
-		SP.value = (SP.value - 2);
+		SP.value -= 2;
 		
-		PC.value = (getInstruction(opcode + 2) << 8) | getInstruction(opcode + 1);
+		PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
 	}
 	
 	// Dedicate individual flag checks
@@ -737,12 +841,31 @@ public class CpuEmulation
 		Z.flag = (res == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
-		CY.flag = (res > 0xff) ? 0 : (byte) 1; // complement carry (inverse)
+		CY.flag = (res > A.value) ? 1 : (byte) 0;  // TODO : verify
 		AC.flag = (res > 0x9) ? (byte) 1 : 0;
 		
 		PC.value++;
 	}
 	
+	private void DAD(Component... rp) {
+		int HL = (H.value << 8) | L.value; // (bits) 8 + 8 = 16
+		
+		int pair;
+		if(rp.length == 2) {
+			pair = (rp[0].value << 8) | rp[1].value;
+		} else 
+		{
+			pair = rp[0].value;
+		}
+		
+		int res = HL + pair; // may result greater than 16 bit, raise CY if occured
+		
+		CY.flag = ((res & 0xffff_0000) > 0) ? (byte) 1 : 0; // cut all values from lower 16 bit and check if higher 16 bit has value
+		
+		H.value = (res & 0xff00) >> 8;	// store higher 8-bit to H
+		L.value = (res & 0xff);			// store lower  8-bit to L
+	}
+
 	private void DCR(Component reg) {
 		reg.value--;
 		flags_simple(reg.value);
@@ -792,17 +915,17 @@ public class CpuEmulation
 	
 	private void LDAX(Component... rp) {
 		int addr = (rp[0].value << 8) | rp[1].value;
-		A.value = getInstruction(addr);
+		A.value = memory[addr];
 	}
 	
 	private void LXI(int opcode, Component... rp) {
 		if(rp.length == 2) {
 			// Register Pair
-			rp[0].value = getInstruction(opcode + 2);	// RP 1 = byte 3
-			rp[1].value = getInstruction(opcode + 1);	// RP 2 = byte 2
+			rp[0].value = memory[opcode + 2];	// RP 1 = byte 3
+			rp[1].value = memory[opcode + 1];	// RP 2 = byte 2
 		} else {
 			// 16-bit variable (SP)
-			rp[0].value = ((getInstruction(opcode + 2) << 8) | getInstruction(opcode + 1)) & 0xffff;
+			rp[0].value = ((memory[opcode + 2] << 8) | memory[opcode + 1]) & 0xffff;
 		}
 		
 		PC.value += 2;
@@ -810,15 +933,85 @@ public class CpuEmulation
 	}
 	
 	private void MVI(int opcode, Component reg) {
-		reg.value = getInstruction(opcode + 1);
-		
+		reg.value = memory[opcode + 1];
+	
 		PC.value++;
+	}
+	
+	private void POP(Component... rp) {
+		rp[1].value = memory[SP.value];
+		rp[0].value = memory[SP.value + 1];
+		SP.value += 2;
+	}
+	
+	private void POP_PSW() {
+		int PSW = memory[SP.value];
+		
+		CY.flag = ((PSW & PSW_FLAG_POS_CY) != 0) ? (byte) 1 : 0;
+		P.flag  = ((PSW & PSW_FLAG_POS_PA) != 0) ? (byte) 1 : 0;
+		AC.flag = ((PSW & PSW_FLAG_POS_AC) != 0) ? (byte) 1 : 0;
+		Z.flag  = ((PSW & PSW_FLAG_POS_ZE) != 0) ? (byte) 1 : 0;
+		S.flag  = ((PSW & PSW_FLAG_POS_SN) != 0) ? (byte) 1 : 0;
+		
+		A.value = memory[SP.value + 1];
+
+		SP.value += 2;
+	}
+	
+	private void PUSH(Component... rp) {
+		memory[SP.value - 1] = rp[0].value; // Push rp1 to sp - 1
+		memory[SP.value - 2] = rp[1].value; // Push rp2 to sp - 2
+		SP.value -= 2;
+	}
+	
+	private void PUSH_PSW() {
+		// A and PSW (formed BCD on flags , plus its filler value)
+
+		memory[SP.value - 1] = A.value;
+		
+		/*
+		 pos 1, 3, 5 have fixed value
+		 pos 1 = 1
+		 pos 3, pos 5 = 0
+		*/
+
+		/* 
+		 pos 0 = carry
+		 pos 2 = parity
+		 pos 4 = aux carry
+		 pos 6 = zero
+		 pos 7 = sign
+		*/
+
+		memory[SP.value - 2] = (
+			(CY.flag & PSW_FLAG_POS_CY) 	|	// place carry flag status on pos 0
+			(0b10)		  					|	// place fixed value "1" on pos 1
+			(P.flag << PSW_FLAG_POS_PA)  	|	// place parity flag status on pos 2
+			(AC.flag << PSW_FLAG_POS_AC) 	| 	// place aux. carry flag status on pos 4
+			(Z.flag  << PSW_FLAG_POS_ZE)  	|	// place zero flag status on pos 6
+			(S.flag  << PSW_FLAG_POS_SN))	| 	// place sign flag status on pos 7
+			(0x0);				// set zero skipped positions
+			
+		SP.value -= 2;
+
 	}
 	
 	private void RET() {
 		int addr = (memory[SP.value + 1] << 8) | memory[SP.value];
 		SP.value += 2;
 		PC.value = addr;
+	}
+	
+	private void XCHG() {
+		int hold_h = H.value;
+		int hold_l = L.value;
+		
+		H.value = D.value;
+		L.value = E.value;
+		
+		D.value = hold_h;
+		E.value = hold_l;
+		
 	}
 	
 	
@@ -837,7 +1030,7 @@ public class CpuEmulation
 	}
 	
 	private void MVI(int opcode, int address) {
-		memory[address] = getInstruction(opcode + 1);
+		memory[address] = memory[opcode + 1];
 		
 		PC.value++;
 	}
@@ -855,10 +1048,6 @@ public class CpuEmulation
 		return (res % 2 == 0) ? (byte) 1 : 0;
 	}
 	
-	// Get instruction
-	private int getInstruction(int pc) {
-		return memory[pc];
-	}
 	
 	///  MISC. METHODS  ///
 	private void init() {
