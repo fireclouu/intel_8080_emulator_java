@@ -85,12 +85,7 @@ public class CpuEmulation
 					MVI(opcode, B);
 					break; // MVI B, D8
 				case 0x07:
-					
-					if (CY.flag != 0) {
-						A.value <<= 1; // left shift
-						CY.flag = 0;
-					}
-					
+					RLC();
 					break; // RLC
 				case 0x08:
 					break; // -
@@ -113,12 +108,7 @@ public class CpuEmulation
 					MVI(opcode, C);
 					break; // MVI C, D8
 				case 0x0f:
-					
-					if (CY.flag != 0) {
-						A.value >>>= 1; // right shift (zero fill)
-						CY.flag = 0;
-					}
-					
+					RRC();	
 					break; // RRC
 					
 				//////   0x10 - 0x1f   /////
@@ -1181,7 +1171,6 @@ public class CpuEmulation
 		}
 		
 		PC.value += 2;
-		
 	}
 	
 	private void MVI(int opcode, Component reg) {
@@ -1252,6 +1241,22 @@ public class CpuEmulation
 		int addr = (memory[SP.value + 1] << 8) | memory[SP.value];
 		SP.value += 2;
 		PC.value = addr;
+	}
+	
+	private void RLC() {
+		int tmp = A.value;
+		
+		A.value = (tmp << 1) | (tmp >>> 7); // Rotate left shift, then rotate 7 right shift, flipping bit 0 if 1 (carry)
+		
+		CY.flag = ((tmp >>> 7) > 0) ? (byte) 1 : 0; // carry if bit 7 is 1
+	}
+	
+	private void RRC() {
+		int tmp = A.value;
+
+		A.value = (tmp >>> 1) | (tmp << 7); // Rotate left shift, then rotate 7 right shift, flipping bit 0 if 1 (carry)
+
+		CY.flag = ((tmp >>> 7) > 0) ? (byte) 1 : 0; // carry if bit 7 is 1
 	}
 	
 	private void STA(int hi_nib, int lo_nib) {
