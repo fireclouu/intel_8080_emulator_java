@@ -5,10 +5,17 @@ import Cpu.*;
 public class Main
 {
 	public static final int PROGRAM_LENGTH = 0x4000;
+	static final String[] romName = {
+		"invaders.h", "invaders.g", "invaders.f", "invaders.e"
+	};
+	static final int[] romAddr = {
+		0x0, 0x800, 0x1000, 0x1800
+	};
 	
-	static CpuEmulation cpu;
 	
-	final static String STORAGE_INTERNAL = "/sdcard/AppProjects/raw8080v2/src/";
+	private static CpuEmulation cpu;
+	
+	final static String STORAGE_INTERNAL = "~/src/";
 	final static String FILE_NAME = "invaders";
 	
 	public static void main(String[] args) {
@@ -17,8 +24,16 @@ public class Main
 	
 	// MAIN
 	public static void startEmulator(String romName) {
+		if(fileExist()) {
+			System.out.println("File online!");
+		} else {
+			System.out.println("File could not be found!");
+			return;
+		}
+		
 		initRom(romName);
 		cpu = new CpuEmulation(loadSplitRom());
+		
 	}
 	
 	// ROM
@@ -35,21 +50,20 @@ public class Main
 		try
 		{
 			file = new FileInputStream(STORAGE_INTERNAL + romName);
-		}
-		catch (FileNotFoundException e)
-		{
-			e.printStackTrace();
-		}
-
-		try
-		{
+			
 			for(int i = 0; i < RomInfo.length; i++) {
 				tmp[i] = file.read();
 			}
 		}
+		catch (FileNotFoundException e)
+		{
+			System.out.println("File/s not found.");
+			return null;
+		}
 		catch (IOException e)
 		{
-			e.printStackTrace();
+			System.out.println("File cannot be read!");
+			return null;
 		}
 
 		return tmp;
@@ -57,19 +71,13 @@ public class Main
 	
 	// LOAD SPLITROM
 	private static int[] loadSplitRom() {
-		String[] romName = {
-			"invaders.h", "invaders.g", "invaders.f", "invaders.e"
-		};
-		
-		int[] romAddr = {
-			0x0, 0x800, 0x1000, 0x1800
-		};
 		
 		// prepare empty container
 		int[] holder = new int[PROGRAM_LENGTH];
 		
 		for(int i = 0; i < romName.length; i++) {
 			InputStream is = openFile(romName[i]);
+			
 			int readFile = 0;
 			
 			int currentAddr = romAddr[i];
@@ -93,6 +101,17 @@ public class Main
 		return holder;
 	}
 	
+	// Early checks
+	private static boolean fileExist() {
+		for(int i = 0; i < romName.length; i++) {
+			if(openFile(romName[i]) == null) {
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
 	// Inputstream
 	private static InputStream openFile(String romName) {
 		try
@@ -101,11 +120,8 @@ public class Main
 		}
 		catch (FileNotFoundException e)
 		{
-			e.printStackTrace();
-			System.exit(0);
+			return null;
 		}
-		
-		return null;
 	}
 	
 	// Return file length
