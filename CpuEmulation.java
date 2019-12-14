@@ -2,10 +2,14 @@ import Cpu.*;
 
 public class CpuEmulation
 {
+	// TODO:
+	
 	///  DECLARE CPU COMPONENTS  ///
 	public static Component B, C, D, E, H, L, A;
 	public static Component PC, SP;
 	public static Flags Z, S, P, CY, AC;
+	
+	///  MEMORY  ///
 	private int[] memory;
 	
 	///  PSW FLAG POSITIONS  ///
@@ -15,6 +19,7 @@ public class CpuEmulation
 	PSW_FLAG_POS_AC = 0b_0001_0000, // on bit pos 4
 	PSW_FLAG_POS_ZE = 0b_0100_0000, // on bit pos 6
 	PSW_FLAG_POS_SN = 0b_1000_0000; // on bit pos 7
+	
 	/* 
 	 pos 0 = carry
 	 pos 2 = parity
@@ -29,7 +34,7 @@ public class CpuEmulation
 		memory = rom;
 		System.out.println("Start emulator...\n");
 		
-		// Start emulator...
+		// Start emulation
 		emulate8080();
 		
 		System.out.println("\nEnd emulator...");
@@ -38,7 +43,7 @@ public class CpuEmulation
 	/////   MAIN EMULATION   /////
 	public void emulate8080() {
 		while(PC.value < Main.PROGRAM_LENGTH) {
-			// store opcode
+			// opcode
 			int opcode = PC.value;
 			
 			// HL (M)
@@ -56,6 +61,9 @@ public class CpuEmulation
 				case 0x01:
 					LXI(opcode, B, C);
 					break; // LXI B, D16
+				case 0x02:
+					STA(B.value, C.value);
+					break; // STAX B
 				case 0x03:
 					INX(B, C);
 					break; // INX B
@@ -68,11 +76,19 @@ public class CpuEmulation
 				case 0x06:
 					MVI(opcode, B);
 					break; // MVI B, D8
+				case 0x07:
+					
+					if (CY.flag != 0) {
+						A.value <<= 1; // left shift
+						CY.flag = 0;
+					}
+					
+					break; // RLC
 				case 0x09:
 					DAD(B, C);
 					break; //DAD B
 				case 0x0a:
-					LDAX(B, C);
+					LDA(B.value, C.value);
 					break; // LDAX B
 				case 0x0b:
 					DCX(B, C);
@@ -86,9 +102,20 @@ public class CpuEmulation
 				case 0x0e:
 					MVI(opcode, C);
 					break; // MVI C, D8
+				case 0x0f:
+					
+					if (CY.flag != 0) {
+						A.value >>>= 1; // right shift (zero fill)
+						CY.flag = 0;
+					}
+					
+					break; // RRC
 				case 0x11:
 					LXI(opcode, D, E);
 					break; // LXI D, D16
+				case 0x12:
+					STA(D.value, E.value);
+					break; // STAX D
 				case 0x13:
 					INX(D, E);
 					break; // INX D
@@ -107,7 +134,7 @@ public class CpuEmulation
 					DAD(D, E);
 					break; //DAD D
 				case 0x1a:
-					LDAX(D, E);
+					LDA(D.value, E.value);
 					break; // LDAX D
 				case 0x1b:
 					DCX(D, E);
@@ -156,6 +183,10 @@ public class CpuEmulation
 				case 0x31:
 					LXI(opcode, SP);
 					break; // LXI SP, D16
+				case 0x32:
+					STA(memory[opcode + 2], memory[opcode + 1]);
+					PC.value += 2;
+					break; // STA adr
 				case 0x33:
 					INX(SP);
 					break; // INX SP
@@ -171,6 +202,10 @@ public class CpuEmulation
 				case 0x39:
 					DAD(SP);
 					break; //DAD SP
+				case 0x3a:
+					LDA(memory[opcode + 2], memory[opcode + 1]);
+					PC.value += 2;
+					break; // LDA adr
 				case 0x3b:
 					DCX(SP);
 					break; // DCX SP
@@ -372,6 +407,54 @@ public class CpuEmulation
 				case 0x7f:
 					A.value = A.value;
 					break; // MOV A, A
+				case 0x80:
+					ADD(B.value);
+					break; // ADD B
+				case 0x81:
+					ADD(C.value);
+					break; // ADD C
+				case 0x82:
+					ADD(D.value);
+					break; // ADD D
+				case 0x83:
+					ADD(E.value);
+					break; // ADD E
+				case 0x84:
+					ADD(H.value);
+					break; // ADD H
+				case 0x85:
+					ADD(L.value);
+					break; // ADD L
+				case 0x86:
+					ADD(memory[addr]);
+					break; // ADD M
+				case 0x87:
+					ADD(A.value);
+					break; // ADD A
+				case 0xa8:
+					XRA(B.value);
+					break; // XRA B
+				case 0xa9:
+					XRA(C.value);
+					break; // XRA C
+				case 0xaa:
+					XRA(D.value);
+					break; // XRA D
+				case 0xab:
+					XRA(E.value);
+					break; // XRA E
+				case 0xac:
+					XRA(H.value);
+					break; // XRA H
+				case 0xad:
+					XRA(L.value);
+					break; // XRA L
+				case 0xae:
+					XRA(memory[addr]);
+					break; // XRA M
+				case 0xaf:
+					XRA(A.value);
+					break; // XRA A
 				case 0xc1:
 					POP(B, C);
 					break; // POP B
@@ -388,6 +471,10 @@ public class CpuEmulation
 				case 0xc5:
 					PUSH(B, C);
 					break; // PUSH B
+				case 0xc6:
+					ADD(memory[opcode + 1]);
+					PC.value++;
+					break; // ADI D8
 				case 0xc9:
 					RET();
 					break; // RET
@@ -416,6 +503,9 @@ public class CpuEmulation
 				case 0xe5:
 					PUSH(H, L);
 					break; // PUSH H
+				case 0xe6:
+					ANI(opcode);
+					break; // ANI D8
 				case 0xeb:
 					XCHG();
 					break; // XCHG (HL to DE vice-versa)
@@ -446,6 +536,9 @@ public class CpuEmulation
 			case 0x01:
 				inst = "LXI B, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
+			case 0x02:
+				inst = "STAX B";
+				break;
 			case 0x03:
 				inst = "INX B";
 				break;
@@ -457,6 +550,9 @@ public class CpuEmulation
 				break;
 			case 0x06:
 				inst = "MVI B, #" + toHex02(memory[opcode + 1]);
+				break;
+			case 0x07:
+				inst = "RLC";
 				break;
 			case 0x09:
 				inst = "DAD B";
@@ -476,8 +572,14 @@ public class CpuEmulation
 			case 0x0e:
 				inst = "MVI C, #" + toHex02(memory[opcode + 1]);
 				break;
+			case 0x0f:
+				inst = "RRC";
+				break;
 			case 0x11:
 				inst = "LXI D, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				break;
+			case 0x12:
+				inst = "STAX B";
 				break;
 			case 0x13:
 				inst = "INX D";
@@ -548,6 +650,9 @@ public class CpuEmulation
 			case 0x31:
 				inst = "LXI SP, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
+			case 0x32:
+				inst = "STA #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				break;
 			case 0x33:
 				inst = "INX SP";
 				break;
@@ -562,6 +667,9 @@ public class CpuEmulation
 				break;
 			case 0x39:
 				inst = "DAD SP";
+				break;
+			case 0x3a:
+				inst = "LDA #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
 			case 0x3b:
 				inst = "DCX SP";
@@ -735,7 +843,7 @@ public class CpuEmulation
 				inst = "MOV M, L";
 				break;
 			case 0x76:
-				inst = "MOV M, M";
+				inst = "HLT";
 				break;
 			case 0x77:
 				inst = "MOV M, A";
@@ -764,23 +872,75 @@ public class CpuEmulation
 			case 0x7f:
 				inst = "MOV A, A";
 				break;
+				
+			case 0x80:
+				inst = "ADD B";
+				break;
+			case 0x81:
+				inst = "ADD C";
+				break;
+			case 0x82:
+				inst = "ADD D";
+				break;
+			case 0x83:
+				inst = "ADD E";
+				break;
+			case 0x84:
+				inst = "ADD H";
+				break;
+			case 0x85:
+				inst = "ADD L";
+				break;
+			case 0x86:
+				inst = "ADD M";
+				break;
+			case 0x87:
+				inst = "ADD A";
+				break;
+			case 0xa8:
+				inst = "XRA B";
+				break;
+			case 0xa9:
+				inst = "XRA C";
+				break;
+			case 0xaa:
+				inst = "XRA D";
+				break;
+			case 0xab:
+				inst = "XRA E";
+				break;
+			case 0xac:
+				inst = "XRA H";
+				break;
+			case 0xad:
+				inst = "XRA L";
+				break;
+			case 0xae:
+				inst = "XRA M";
+				break;
+			case 0xaf:
+				inst = "XRA A";
+				break;
 			case 0xc1:
 				inst = "POP B";
 				break;
 			case 0xc2:
-				inst = "JNZ $" + toHex04((memory[opcode+2] << 8) + memory[opcode+1]) + " | ZF: " + Z.flag;
+				inst = "JNZ $" + toHex04((memory[opcode + 2] << 8) + memory[opcode + 1]) + " | ZF: " + Z.flag;
 				break;
 			case 0xc3:
-				inst = "JMP $" + toHex04((memory[opcode+2] << 8) + memory[opcode+1]);
+				inst = "JMP $" + toHex04((memory[opcode + 2] << 8) + memory[opcode+1]);
 				break;
 			case 0xc5:
 				inst = "PUSH B";
+				break;
+			case 0xc6:
+				inst = "ADI #" + toHex02(memory[opcode + 1]);
 				break;
 			case 0xc9:
 				inst = "RET";
 				break;
 			case 0xcd:
-				inst = "CALL $" + toHex04((memory[opcode+2] << 8) + memory[opcode+1]);
+				inst = "CALL $" + toHex04((memory[opcode + 2] << 8) + memory[opcode + 1]);
 				break;
 			case 0xd1:
 				inst = "POP D";
@@ -799,7 +959,10 @@ public class CpuEmulation
 				break;
 			case 0xe5:
 				inst = "PUSH H";
-				break; 
+				break;
+			case 0xe6:
+				inst = "ANI #" + toHex02(memory[opcode + 1]);
+				break;
 			case 0xeb:
 				inst = "XCHG";
 				break;
@@ -821,6 +984,22 @@ public class CpuEmulation
 	
 	
 	///  SUBROUTINES  ///
+	private void ADD(int var) {
+		int res = A.value + var;
+		
+		flags_BCD(res);
+		
+		A.value = res & 0xff;
+	}
+	
+	private void ANI(int opcode) {
+		int res = A.value & memory[opcode + 1];
+		flags_BCD(res);
+		CY.flag = 0;	// override BCD flag result
+		
+		PC.value++;
+	}
+	
 	private void CALL(int opcode) {
 		int nextAddr = opcode + 3;
 		memory[SP.value - 1] = ((nextAddr >> 8) & 0xff); // Store rightmost 8bit addr
@@ -831,16 +1010,16 @@ public class CpuEmulation
 	}
 	
 	// Dedicate individual flag checks
-	private void CMP(int opbyte) {
+	private void CMP(int opcode) {
 		// a + (two comp. immediate)
 		// complement — defined also as "another set" e.g. another set of binary 1 is binary 0!
 		// similar to a - immediate
 		// int twoComp = ((~opbyte & 0xff) + 1);
-		int res = A.value - opbyte;
+		int res = A.value - opcode;
 		
 		Z.flag = (res == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
-		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
+		P.flag = parityFlag(res);  // ensuring only checks for 8-bit variable
 		CY.flag = (res > A.value) ? 1 : (byte) 0;  // TODO : verify
 		AC.flag = (res > 0x9) ? (byte) 1 : 0;
 		
@@ -867,9 +1046,13 @@ public class CpuEmulation
 	}
 
 	private void DCR(Component reg) {
-		reg.value--;
-		flags_simple(reg.value);
-		reg.value &= 0xff;
+		int res = reg.value - 1;
+		
+		Z.flag = (res == 0) ? (byte) 1 : 0;
+		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0; // Masking
+		P.flag = parityFlag(res & 0xff);
+		
+		reg.value = res & 0xff;
 	}
 	
 	private void DCX(Component... rp) {
@@ -892,9 +1075,11 @@ public class CpuEmulation
 	}
 	
 	private void INR(Component reg) {
-		reg.value++;
-		flags_simple(reg.value);
-		reg.value &= 0xff; // ensure it only takes 8-bit
+		int res = reg.value + 1;
+		reg.value = res & 0xff; // ensure it only takes 8-bit
+		
+		flags_Arith(res);
+		
 	}
 	
 	private void INX(Component... rp) {
@@ -913,8 +1098,8 @@ public class CpuEmulation
 		}
 	}
 	
-	private void LDAX(Component... rp) {
-		int addr = (rp[0].value << 8) | rp[1].value;
+	private void LDA(int hi_nib, int lo_nib) {
+		int addr = (hi_nib << 8) | lo_nib;
 		A.value = memory[addr];
 	}
 	
@@ -986,11 +1171,11 @@ public class CpuEmulation
 		memory[SP.value - 2] = (
 			(CY.flag & PSW_FLAG_POS_CY) 	|	// place carry flag status on pos 0
 			(0b10)		  					|	// place fixed value "1" on pos 1
-			(P.flag << PSW_FLAG_POS_PA)  	|	// place parity flag status on pos 2
+			(P.flag  << PSW_FLAG_POS_PA)  	|	// place parity flag status on pos 2
 			(AC.flag << PSW_FLAG_POS_AC) 	| 	// place aux. carry flag status on pos 4
 			(Z.flag  << PSW_FLAG_POS_ZE)  	|	// place zero flag status on pos 6
 			(S.flag  << PSW_FLAG_POS_SN))	| 	// place sign flag status on pos 7
-			(0x0);				// set zero skipped positions
+			(0x0);				// set zero skipped empty positions
 			
 		SP.value -= 2;
 
@@ -1002,6 +1187,11 @@ public class CpuEmulation
 		PC.value = addr;
 	}
 	
+	private void STA(int hi_nib, int lo_nib) {
+		int addr = (hi_nib << 8) | lo_nib;
+		memory[addr] = A.value;
+	}
+	
 	private void XCHG() {
 		int hold_h = H.value;
 		int hold_l = L.value;
@@ -1011,22 +1201,35 @@ public class CpuEmulation
 		
 		D.value = hold_h;
 		E.value = hold_l;
-		
 	}
 	
+	private void XRA(int var) {
+		int res = A.value ^ var;
+		
+		flags_BCD(var);
+		CY.flag = 0;
+		AC.flag = 0;
+		
+		A.value = res;
+	}
 	
 	///  HL SUBROUTINES  ///
 	
 	private void DCR(int address) {
-		memory[address]--;
-		flags_simple(memory[address]);
-		memory[address] &= 0xff;
+		int res = (memory[address] - 1);
+		
+		Z.flag = (res == 0) ? (byte) 1 : 0;
+		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0; // Masking
+		P.flag = parityFlag(res & 0xff);
+		
+		memory[address] = res & 0xff;
 	}
 	
 	private void INR(int address) {
-		memory[address]++;
-		flags_simple(memory[address]);
-		memory[address] &= 0xff; // ensure it only takes 8-bit
+		int res = memory[address] + 1;
+		memory[address] = res & 0xff; // ensure it only takes 8-bit
+		
+		flags_Arith(res);
 	}
 	
 	private void MVI(int opcode, int address) {
@@ -1036,11 +1239,20 @@ public class CpuEmulation
 	}
 	
 	///  FLAGS  ///
-	private void flags_simple(int result) {
+	private void flags_BCD(int result) {
+		CY.flag = (result > 0xff) ? (byte) 1 : 0;
 		Z.flag = (result == 0) ? (byte) 1 : 0;
 		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
-		AC.flag = (result > 0x9) ? (byte) 1 : 0;
+		AC.flag = (result > 0x09) ? (byte) 1 : 0;
+	}
+	
+	private void flags_Arith(int result) {
+		// CY.flag = (result > 0xff) ? (byte) 1 : 0;
+		Z.flag = (result == 0) ? (byte) 1 : 0;
+		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
+		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
+		AC.flag = (result > 0x09) ? (byte) 1 : 0;
 	}
 	
 	private byte parityFlag(int result) {

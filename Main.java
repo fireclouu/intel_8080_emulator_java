@@ -15,7 +15,7 @@ public class Main
 	
 	private static CpuEmulation cpu;
 	
-	final static String STORAGE_INTERNAL = "/sdcard/AppProjects/raw8080v2/src/";
+	final static String STORAGE_INTERNAL = "~/src/";
 	final static String FILE_NAME = "invaders";
 	
 	public static void main(String[] args) {
@@ -33,7 +33,6 @@ public class Main
 		
 		initRom(romName);
 		cpu = new CpuEmulation(loadSplitRom());
-		
 	}
 	
 	// ROM
@@ -71,15 +70,12 @@ public class Main
 	
 	// LOAD SPLITROM
 	private static int[] loadSplitRom() {
-		
 		// prepare empty container
 		int[] holder = new int[PROGRAM_LENGTH];
 		
 		for(int i = 0; i < romName.length; i++) {
 			InputStream is = openFile(romName[i]);
-			
 			int readFile = 0;
-			
 			int currentAddr = romAddr[i];
 			
 			try
@@ -112,7 +108,7 @@ public class Main
 		return true;
 	}
 	
-	// Inputstream
+	// FILE subroutine
 	private static InputStream openFile(String romName) {
 		try
 		{
@@ -135,6 +131,4 @@ public class Main
 		
 		return size;
 	}
-	
-	
 }
