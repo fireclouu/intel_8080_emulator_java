@@ -507,7 +507,7 @@ public class CpuEmulation
 					POP(B, C);
 					break; // POP B
 				case 0xc2:
-					if(Z.flag == 0) {
+					if (Z.flag == 0) {
 						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
 					} else {
 						PC.value += 2;
@@ -535,18 +535,39 @@ public class CpuEmulation
 				case 0xd1:
 					POP(D, E);
 					break; // POP D
+				case 0xd2:
+					if (CY.flag == 0) {
+						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
+					} else {
+						PC.value += 2;
+					}
+					break; // JNC adr
 				case 0xd3:
 					PC.value++;
 					break; // OUT D8
 				case 0xd5:
 					PUSH(D, E);
 					break; // PUSH D
+				case 0xda:
+					if (CY.flag == 1) {
+						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
+					} else {
+						PC.value += 2;
+					}
+					break; // JC adr
 					
 				//////   0xe0 - 0xef   /////
 					
 				case 0xe1:
 					POP(H, L);
 					break; // POP H
+				case 0xe2:
+					if (P.flag == 0) {
+						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
+					} else {
+						PC.value += 2;
+					}
+					break; // JPO adr
 				case 0xe4:
 					if (P.flag == 0) {
 						CALL(opcode);
@@ -560,6 +581,13 @@ public class CpuEmulation
 				case 0xe6:
 					ANI(opcode);
 					break; // ANI D8
+				case 0xea:
+					if (P.flag == 1) {
+						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
+					} else {
+						PC.value += 2;
+					}
+					break; // JPE adr
 				case 0xeb:
 					XCHG();
 					break; // XCHG (HL to DE vice-versa)
@@ -569,9 +597,23 @@ public class CpuEmulation
 				case 0xf1:
 					POP_PSW();
 					break; // POP PSW
+				case 0xf2:
+					if (S.flag == 0) {
+						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
+					} else {
+						PC.value += 2;
+					}
+					break; // JP adr	
 				case 0xf5:
 					PUSH_PSW();
 					break; // PUSH PSW
+				case 0xfa:
+					if (S.flag == 1) {
+						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
+					} else {
+						PC.value += 2;
+					}
+					break; // JM adr	
 				case 0xfe:
 					CMP(memory[opcode + 1]);
 					break; // CPI D8
@@ -1023,8 +1065,14 @@ public class CpuEmulation
 			case 0xcd:
 				inst = "CALL $" + toHex04((memory[opcode + 2] << 8) + memory[opcode + 1]);
 				break;
+				
+			/////     0xd0 - 0xdf     /////
+				
 			case 0xd1:
 				inst = "POP D";
+				break;
+			case 0xd2:
+				inst = "JNC #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
 			case 0xd3:
 				inst = "OUT #" + toHex02(memory[opcode + 1]);
@@ -1032,8 +1080,17 @@ public class CpuEmulation
 			case 0xd5:
 				inst = "PUSH D";
 				break;
+			case 0xda:
+				inst = "JC #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				break;
+				
+			/////     0xe0 - 0xef     /////
+				
 			case 0xe1:
 				inst = "POP H";
+				break;
+			case 0xe2:
+				inst = "JPO #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
 			case 0xe4:
 				inst = "CPO $" + toHex04((memory[opcode + 2] << 8) + memory[opcode + 1]);
@@ -1044,14 +1101,26 @@ public class CpuEmulation
 			case 0xe6:
 				inst = "ANI #" + toHex02(memory[opcode + 1]);
 				break;
+			case 0xea:
+				inst = "JPE #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				break;
 			case 0xeb:
 				inst = "XCHG";
 				break;
+				
+			/////     0xf0 - 0xff     /////
+				
 			case 0xf1:
 				inst = "POP PSW";
 				break;
+			case 0xf2:
+				inst = "JP #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				break;
 			case 0xf5:
 				inst = "PUSH PSW";
+				break;
+			case 0xfa:
+				inst = "JM #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
 			case 0xfe:
 				inst = "CPI #" + toHex02(memory[opcode + 1]);
