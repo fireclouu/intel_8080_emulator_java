@@ -133,6 +133,9 @@ public class CpuEmulation
 				case 0x16:
 					MVI(opcode, D);
 					break; // MVI D, D8
+				case 0x17:
+					RAL();
+					break; // RAL
 				case 0x18:
 					break; // -
 				case 0x19:
@@ -153,6 +156,9 @@ public class CpuEmulation
 				case 0x1e:
 					MVI(opcode, E);
 					break; // MVI E, D8
+				case 0x1f:
+					RAR();
+					break; // RAR
 					
 				//////   0x20 - 0x2f   /////
 					
@@ -161,6 +167,9 @@ public class CpuEmulation
 				case 0x21:
 					LXI(opcode, H, L);
 					break; // LXI H, D16
+				case 0x22:
+					SHLD(opcode);
+					break; // SHLD adr
 				case 0x23:
 					INX(H, L);
 					break; // INX H
@@ -173,6 +182,9 @@ public class CpuEmulation
 				case 0x26:
 					MVI(opcode, H);
 					break; // MVI H, D8
+				// Case 0x27 DAA (BCD)
+				case 0x28:
+					break; // -
 				case 0x29:
 					DAD(H, L);
 					break; //DAD H
@@ -650,6 +662,9 @@ public class CpuEmulation
 			case 0x16:
 				inst = "MVI D, #" + toHex02(memory[opcode + 1]);
 				break;
+			case 0x17:
+				inst = "RAL";
+				break;
 			case 0x18:
 				inst = " - ";
 				break;
@@ -671,11 +686,17 @@ public class CpuEmulation
 			case 0x1e:
 				inst = "MVI E, #" + toHex02(memory[opcode + 1]);
 				break;
+			case 0x1f:
+				inst = "RAR";
+				break;
 			case 0x20:
 				inst = " - ";
 				break;
 			case 0x21:
 				inst = "LXI H, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				break;
+			case 0x22:
+				inst = "SHLD #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
 			case 0x23:
 				inst = "INX H";
@@ -688,6 +709,9 @@ public class CpuEmulation
 				break;
 			case 0x26:
 				inst = "MVI H, #" + toHex02(memory[opcode + 1]);
+				break;
+			case 0x28:
+				inst = " - ";
 				break;
 			case 0x29:
 				inst = "DAD H";
@@ -1077,7 +1101,7 @@ public class CpuEmulation
 		Z.flag = (res == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(res);  // ensuring only checks for 8-bit variable
-		CY.flag = (res > A.value) ? 1 : (byte) 0;  // TODO : verify
+		CY.flag = (res > 0xff) ? 1 : (byte) 0;  // TODO : verify
 		AC.flag = (res > 0x9) ? (byte) 1 : 0;
 		
 		PC.value++;
@@ -1104,12 +1128,9 @@ public class CpuEmulation
 
 	private void DCR(Component reg) {
 		int res = reg.value - 1;
-		
-		Z.flag = (res == 0) ? (byte) 1 : 0;
-		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0; // Masking
-		P.flag = parityFlag(res & 0xff);
-		
 		reg.value = res & 0xff;
+		
+		flags_Arith(res);
 	}
 	
 	private void DCX(Component... rp) {
@@ -1237,6 +1258,19 @@ public class CpuEmulation
 
 	}
 	
+	private void RAL() {
+		int tmp = A.value;
+		A.value = (tmp << 1) | CY.flag;
+		CY.flag = (byte) (tmp >> 7);
+	}
+	
+	private void RAR() {
+		int tmp = A.value;
+		int mask = ((A.value >>> 7) << 7); // Right shift to 7, left shift to 7 (0x80 or 0x0)
+		A.value = (tmp >> 1) | mask;
+		CY.flag = (byte) (tmp & 0x1);
+	}
+	
 	private void RET() {
 		int addr = (memory[SP.value + 1] << 8) | memory[SP.value];
 		SP.value += 2;
@@ -1245,23 +1279,25 @@ public class CpuEmulation
 	
 	private void RLC() {
 		int tmp = A.value;
-		
-		A.value = (tmp << 1) | (tmp >>> 7); // Rotate left shift, then rotate 7 right shift, flipping bit 0 if 1 (carry)
-		
+		A.value = (tmp << 1) | (tmp >>> 7); // Rotate left shift, then rotate 7 right shift, flipping bit 0 if 1 (carry)	
 		CY.flag = ((tmp >>> 7) > 0) ? (byte) 1 : 0; // carry if bit 7 is 1
 	}
 	
 	private void RRC() {
 		int tmp = A.value;
-
-		A.value = (tmp >>> 1) | (tmp << 7); // Rotate left shift, then rotate 7 right shift, flipping bit 0 if 1 (carry)
-
+		A.value = (tmp >>> 1) | (tmp << 7); // Rotate right shift (zero fill), then rotate 7 right shift, flipping bit 0 if 1 (carry)
 		CY.flag = ((tmp >>> 7) > 0) ? (byte) 1 : 0; // carry if bit 7 is 1
 	}
 	
 	private void STA(int hi_nib, int lo_nib) {
 		int addr = (hi_nib << 8) | lo_nib;
 		memory[addr] = A.value;
+	}
+	
+	private void SHLD(int opcode) {
+		int addr = (memory[opcode + 2]) << 8 | memory[opcode + 1];
+		memory[addr + 1] = H.value;
+		memory[addr] = L.value;
 	}
 	
 	private void XCHG() {
@@ -1320,7 +1356,6 @@ public class CpuEmulation
 	}
 	
 	private void flags_Arith(int result) {
-		// CY.flag = (result > 0xff) ? (byte) 1 : 0;
 		Z.flag = (result == 0) ? (byte) 1 : 0;
 		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
