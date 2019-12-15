@@ -474,6 +474,30 @@ public class CpuEmulation
 				
 				//////   0xa0 - 0xaf   /////
 				
+				case 0xa0:
+					ANA(B.value);
+					break; // ANA B
+				case 0xa1:
+					ANA(C.value);
+					break; // ANA C
+				case 0xa2:
+					ANA(D.value);
+					break; // ANA D
+				case 0xa3:
+					ANA(E.value);
+					break; // ANA E
+				case 0xa4:
+					ANA(H.value);
+					break; // ANA H
+				case 0xa5:
+					ANA(L.value);
+					break; // ANA L
+				case 0xa6:
+					ANA(memory[addr]);
+					break; // ANA M
+				case 0xa7:
+					ANA(A.value);
+					break; // ANA A
 				case 0xa8:
 					XRA(B.value);
 					break; // XRA B
@@ -580,6 +604,7 @@ public class CpuEmulation
 					break; // PUSH H
 				case 0xe6:
 					ANI(opcode);
+					PC.value++;
 					break; // ANI D8
 				case 0xea:
 					if (P.flag == 1) {
@@ -614,8 +639,12 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // JM adr	
+				case 0xfb:
+					// TODO: needs to implement!
+					break; // EI
 				case 0xfe:
 					CMP(memory[opcode + 1]);
+					PC.value++;
 					break; // CPI D8
 
 				default:
@@ -1020,6 +1049,33 @@ public class CpuEmulation
 			case 0x87:
 				inst = "ADD A";
 				break;
+				
+			/////     0xa0 - 0xaf     /////
+			
+			case 0xa0:
+				inst = "ANA B";
+				break;
+			case 0xa1:
+				inst = "ANA C";
+				break;
+			case 0xa2:
+				inst = "ANA D";
+				break;
+			case 0xa3:
+				inst = "ANA E";
+				break;
+			case 0xa4:
+				inst = "ANA H";
+				break;
+			case 0xa5:
+				inst = "ANA L";
+				break;
+			case 0xa6:
+				inst = "ANA M";
+				break;
+			case 0xa7:
+				inst = "ANA A";
+				break;
 			case 0xa8:
 				inst = "XRA B";
 				break;
@@ -1122,6 +1178,9 @@ public class CpuEmulation
 			case 0xfa:
 				inst = "JM #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
+			case 0xfb:
+				inst = "EI (unimplemented)";
+				break;
 			case 0xfe:
 				inst = "CPI #" + toHex02(memory[opcode + 1]);
 				break;
@@ -1142,12 +1201,15 @@ public class CpuEmulation
 		A.value = res & 0xff;
 	}
 	
+	private void ANA(int var) {
+		A.value = (A.value | var);
+		flags_Logic(A.value);
+	}
+	
 	private void ANI(int opcode) {
 		int res = A.value & memory[opcode + 1];
 		flags_BCD(res);
 		CY.flag = 0;	// override BCD flag result
-		
-		PC.value++;
 	}
 	
 	private void CALL(int opcode) {
@@ -1172,8 +1234,6 @@ public class CpuEmulation
 		P.flag = parityFlag(res);  // ensuring only checks for 8-bit variable
 		CY.flag = (res > 0xff) ? 1 : (byte) 0;  // TODO : verify
 		AC.flag = (res > 0x9) ? (byte) 1 : 0;
-		
-		PC.value++;
 	}
 	
 	private void DAD(Component... rp) {
@@ -1355,7 +1415,8 @@ public class CpuEmulation
 	private void RRC() {
 		int tmp = A.value;
 		A.value = (tmp >>> 1) | (tmp << 7); // Rotate right shift (zero fill), then rotate 7 right shift, flipping bit 0 if 1 (carry)
-		CY.flag = ((tmp >>> 7) > 0) ? (byte) 1 : 0; // carry if bit 7 is 1
+		// CY.flag = ((tmp >>> 7) > 0) ? (byte) 1 : 0; // carry if bit 7 is 1
+		CY.flag = (byte) (tmp & 0x1);
 	}
 	
 	private void STA(int hi_nib, int lo_nib) {
@@ -1429,6 +1490,12 @@ public class CpuEmulation
 		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
 		AC.flag = (result > 0x09) ? (byte) 1 : 0;
+	}
+	
+	private void flags_Logic(int result) {
+		Z.flag = (result == 0) ? (byte) 1 : 0;
+		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
+		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
 	}
 	
 	private byte parityFlag(int result) {
