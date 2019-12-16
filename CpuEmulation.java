@@ -9,6 +9,9 @@ public class CpuEmulation
 	   - strict handling of 0xff (8 bit), 0xffff (16 bit) addresses, java only offers signed data types
 	*/
 	
+	/// OFFSET (use to correctly display memory address of ROMS that is not loaded on 0x0
+	int fileDirectAddr = Main.romAddr[0];
+	
 	///  DECLARE CPU COMPONENTS  ///
 	public static Component B, C, D, E, H, L, A;
 	public static Component PC, SP;
@@ -1254,22 +1257,24 @@ public class CpuEmulation
 				inst = "" + toHex02(memory[opcode]) + " is not implemented!";
 		}
 		
-		System.out.println("SP: " + toHex04(SP.value) + " | " + toHex04(opcode) + ": " + inst);
 		System.out.println(
 			"B: " + toHex02(B.value) + " | C: " + toHex02(C.value) + " | D: " + toHex02(D.value) +
 			" | E: " + toHex02(E.value) + " | H: " + toHex02(H.value) + " | L: " + toHex02(L.value) +
-			" | M: " + toHex02(memory[H.value<<8] | memory[L.value])  + " | A: " + toHex02(A.value));
+			" | M: " + toHex02(memory[memory[H.value<<8] | memory[L.value]])  + " | A: " + toHex02(A.value));
 			
 		System.out.println(
 			"CY: " + CY.flag + " | ZR: " + Z.flag + " | PA: " + P.flag + " | SN: " + S.flag + " | AC: " + AC.flag);
-			System.out.println();
+		
+		System.out.println("SP: " + toHex04(SP.value) + " | (" + toHex02(memory[opcode]) + ") | FILE_ADDR: " + toHex04(opcode - this.fileDirectAddr) + " | PC: " + toHex04(opcode) + "  " + inst);
+		
+		System.out.println();
 	}
 	
 	// TODO: Check aux. carry
 	///  SUBROUTINES  ///
 	private void ADC(int var) {
 		int res = (A.value + var) + CY.flag;
-		
+	
 		flags_BCD(res);
 		
 		A.value = res & 0xff;
@@ -1307,6 +1312,7 @@ public class CpuEmulation
 	
 	// Dedicate individual flag checks
 	private void CMP(int var) {
+		// Need to perform two-complement to achieve such result
 		// a + (two comp. immediate)
 		// complement — defined also as "another set" e.g. another set of binary 1 is binary 0!
 		// similar to a - immediate
@@ -1316,7 +1322,7 @@ public class CpuEmulation
 		Z.flag = (res == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(res);  // ensuring only checks for 8-bit variable
-		CY.flag = (res > 0xff) ? 1 : (byte) 0;  // TODO : verify
+		CY.flag = (res > 0xff ) ? 1 : (byte) 0;
 		AC.flag = (res > 0x9) ? (byte) 1 : 0;
 	}
 	
@@ -1607,7 +1613,7 @@ public class CpuEmulation
 	// CPU OVERRIDE
 	private void cpuOverride() {
 		// JMP 0x0100 (load also file in 0x100)
-		PC.value = 0x100;
+		PC.value = this.fileDirectAddr;
 		
 		// fix sp
 		memory[368] = 0x07;

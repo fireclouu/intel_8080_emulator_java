@@ -28,7 +28,7 @@ public class Main
 	
 	private static CpuEmulation cpu;
 	
-	final static String STORAGE_INTERNAL = "~/src";
+	final static String STORAGE_INTERNAL = "~/src/";
 	// final static String FILE_NAME = "invaders";
 	final static String FILE_NAME = "cpudiag.bin";
 	
