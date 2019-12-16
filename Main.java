@@ -4,27 +4,44 @@ import Cpu.*;
 
 public class Main
 {
-	public static final int PROGRAM_LENGTH = 0x4000;
+	///   ROM LENGTH   ///
+	public static final int PROGRAM_LENGTH = 0x10_000;
+	
+	///   SPLIT ROMS LIST   ///
 	static final String[] romName = {
-		"invaders.h", "invaders.g", "invaders.f", "invaders.e"
+		/*"invaders.h",
+		"invaders.g",
+		"invaders.f",
+		"invaders.e"*/
+		"cpudiag.bin"
 	};
+	
+	///   LOAD ADDRESS   ///
 	static final int[] romAddr = {
-		0x0, 0x800, 0x1000, 0x1800
+		/*0x0000,
+		0x0800,
+		0x1000,
+		0x1800*/
+		0x0100
 	};
 	
 	
 	private static CpuEmulation cpu;
 	
-	final static String STORAGE_INTERNAL = "~/src/";
-	final static String FILE_NAME = "invaders";
+	final static String STORAGE_INTERNAL = "~/src";
+	// final static String FILE_NAME = "invaders";
+	final static String FILE_NAME = "cpudiag.bin";
 	
+	// MAIN
 	public static void main(String[] args) {
 		startEmulator(FILE_NAME);
 	}
 	
-	// MAIN
+	// EMULATION
 	public static void startEmulator(String romName) {
-		if(fileExist()) {
+		boolean isSplit = true;
+		
+		if(fileExist(isSplit)) {
 			System.out.println("File online!");
 		} else {
 			System.out.println("File could not be found!");
@@ -32,75 +49,73 @@ public class Main
 		}
 		
 		initRom(romName);
-		cpu = new CpuEmulation(loadSplitRom());
+		cpu = new CpuEmulation(loadRom(isSplit));
 	}
 	
-	// ROM
+	// ROM META
 	private static void initRom(String romName) {
 			RomInfo.title = romName;
 			RomInfo.length = PROGRAM_LENGTH;
 	}
 	
-	// Load ROM
-	private static int[] loadRoms(String romName) {
-		InputStream file = null;
-		int tmp[] = new int[PROGRAM_LENGTH];
-		
-		try
-		{
-			file = new FileInputStream(STORAGE_INTERNAL + romName);
-			
-			for(int i = 0; i < RomInfo.length; i++) {
-				tmp[i] = file.read();
-			}
-		}
-		catch (FileNotFoundException e)
-		{
-			System.out.println("File/s not found.");
-			return null;
-		}
-		catch (IOException e)
-		{
-			System.out.println("File cannot be read!");
-			return null;
-		}
-
-		return tmp;
-	}
-	
-	// LOAD SPLITROM
-	private static int[] loadSplitRom() {
-		// prepare empty container
+	// LOAD ROM
+	private static int[] loadRom(boolean isSplit) {
+		// Prepare empty container
 		int[] holder = new int[PROGRAM_LENGTH];
 		
-		for(int i = 0; i < romName.length; i++) {
-			InputStream is = openFile(romName[i]);
-			int readFile = 0;
-			int currentAddr = romAddr[i];
+		if (isSplit) {
 			
-			try
-			{
-				int counter = 0;
+			for(int i = 0; i < romName.length; i++) {
+				InputStream file = openFile(romName[i]);
+				int readFile = 0;
+				int currentAddr = romAddr[i];
+			
+				try	{
+					int counter = 0;
 				
-				while ((readFile = is.read()) != -1)
-				{
-					holder[currentAddr + counter] = readFile;
-					counter++;
+					while ((readFile = file.read()) != -1) {
+						holder[currentAddr + counter] = readFile;
+						counter++;
+					}
+				
+				} catch (IOException e) {
+					System.out.println(romAddr[i] + " cannot be read!");
+					return null;
 				}
 			}
-			catch (IOException e)
-			{
-				e.printStackTrace();
+			
+		} else {
+			try {
+				InputStream file = openFile(FILE_NAME);
+				int readFile = 0;
+				int counter = 0;
+				
+				while ((readFile = file.read()) != -1) {
+					holder[counter] = readFile;
+					counter++;
+				}
+
+			} catch (IOException e) {
+				System.out.println(romName + " cannot be read!");
+				return null;
 			}
 		}
 		
 		return holder;
 	}
 	
-	// Early checks
-	private static boolean fileExist() {
-		for(int i = 0; i < romName.length; i++) {
-			if(openFile(romName[i]) == null) {
+	// FILE EXISTENCE CHECK
+	private static boolean fileExist(boolean isSplit) {
+		if(isSplit) {
+			for(int i = 0; i < romName.length; i++) {
+				
+				if (openFile(romName[i]) == null) {
+					return false;
+				}
+			}
+		} else {
+			
+			if (openFile(FILE_NAME) == null) {
 				return false;
 			}
 		}
@@ -108,27 +123,31 @@ public class Main
 		return true;
 	}
 	
-	// FILE subroutine
+	// FILE SUBROUTINE
 	private static InputStream openFile(String romName) {
-		try
-		{
+		try {
 			return new FileInputStream(STORAGE_INTERNAL + romName);
-		}
-		catch (FileNotFoundException e)
-		{
+		} catch (FileNotFoundException e) {
 			return null;
 		}
 	}
 	
-	// Return file length
-	private static int getFileLength(String romName) throws FileNotFoundException, IOException {
-		FileInputStream file = new FileInputStream(STORAGE_INTERNAL + romName);
+	// ACTUAL ROM FILELENGTH
+	private static int getFileLength(String romName) {
+		InputStream file = openFile(romName);
 		int size = 0;
 		
-		while(file.read() != -1) {
-			size++;
+		try
+		{
+	
+			while (file.read() != -1) {
+				size++;
+			}
+			
+		} catch (IOException e) {
+			return -1;
 		}
-		
+
 		return size;
 	}
 }
