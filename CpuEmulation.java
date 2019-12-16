@@ -1569,11 +1569,6 @@ public class CpuEmulation
 		AC.flag = (result > 0x09) ? (byte) 1 : 0;
 	}
 	
-	private void flags_Logic(int result) {
-		Z.flag = (result == 0) ? (byte) 1 : 0;
-		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
-		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
-	}
 	
 	private byte parityFlag(int result) {
 		int res = Integer.toBinaryString(result).replaceAll("0", "").length(); // Simple workaround to get count of flipped binary
@@ -1624,6 +1619,7 @@ public class CpuEmulation
 	}
 	
 	private void TEST_DIAG(int opcode) {
+		// SOURCE: kpmiller (i8080.c)
 		if (5 ==  ((memory[opcode + 2] << 8) | memory[opcode + 1]))
 		{
 			if (C.value == 9)
@@ -1639,7 +1635,6 @@ public class CpuEmulation
 			}
 			else if (C.value == 2)
 			{
-				//saw this in the inspected code, never saw it called
 				System.out.println ("print char routine called\n");
 			}
 		}
