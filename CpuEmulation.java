@@ -1263,7 +1263,7 @@ public class CpuEmulation
 			" | M: " + toHex02(memory[memory[H.value<<8] | memory[L.value]])  + " | A: " + toHex02(A.value));
 			
 		System.out.println(
-			"CY: " + CY.flag + " | ZR: " + Z.flag + " | PA: " + P.flag + " | SN: " + S.flag + " | AC: " + AC.flag);
+			"CY: " + CY.flag + " | ZR: " + Z.flag + " | PA: " + P.flag + " | SN: " + S.flag /*+ " | AC: " + AC.flag*/);
 		
 		System.out.println("SP: " + toHex04(SP.value) + " | (" + toHex02(memory[opcode]) + ") | FILE_ADDR: " + toHex04(opcode - this.fileDirectAddr) + " | PC: " + toHex04(opcode) + "  " + inst);
 		
@@ -1297,7 +1297,7 @@ public class CpuEmulation
 	private void ANI(int opcode) {
 		int res = A.value & memory[opcode + 1];
 		flags_BCD(res);
-		AC.flag = 0;	// override flag result since AC always set to 0
+		// AC.flag = 0;	// override flag result since AC always set to 0
 		CY.flag = 0;	// override flag result since CY always set to 0
 	}
 	
@@ -1315,15 +1315,14 @@ public class CpuEmulation
 		// Need to perform two-complement to achieve such result
 		// a + (two comp. immediate)
 		// complement — defined also as "another set" e.g. another set of binary 1 is binary 0!
-		// similar to a - immediate
-		// int twoComp = ((~opbyte & 0xff) + 1);
-		int res = A.value - var;
+		int res = (A.value + (~var + 1) & 0xff);
 		
-		Z.flag = (res == 0) ? (byte) 1 : 0;
+		System.out.println("Value: " + Integer.toHexString(res));
+		Z.flag = ((res & 0xff) == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
-		P.flag = parityFlag(res);  // ensuring only checks for 8-bit variable
-		CY.flag = (res > 0xff ) ? 1 : (byte) 0;
-		AC.flag = (res > 0x9) ? (byte) 1 : 0;
+		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
+		CY.flag = (var > A.value) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff 
+		//AC.flag = (res > 0x9) ? (byte) 1 : 0;
 	}
 	
 	private void DAD(Component... rp) {
@@ -1425,7 +1424,7 @@ public class CpuEmulation
 		
 		CY.flag = ((PSW & PSW_FLAG_POS_CY) != 0) ? (byte) 1 : 0;
 		P.flag  = ((PSW & PSW_FLAG_POS_PA) != 0) ? (byte) 1 : 0;
-		AC.flag = ((PSW & PSW_FLAG_POS_AC) != 0) ? (byte) 1 : 0;
+		//AC.flag = ((PSW & PSW_FLAG_POS_AC) != 0) ? (byte) 1 : 0;
 		Z.flag  = ((PSW & PSW_FLAG_POS_ZE) != 0) ? (byte) 1 : 0;
 		S.flag  = ((PSW & PSW_FLAG_POS_SN) != 0) ? (byte) 1 : 0;
 		
@@ -1531,7 +1530,7 @@ public class CpuEmulation
 		
 		flags_BCD(var);
 		CY.flag = 0;
-		AC.flag = 0;
+		// AC.flag = 0;
 		
 		A.value = res;
 	}
@@ -1565,14 +1564,14 @@ public class CpuEmulation
 		Z.flag = (result == 0) ? (byte) 1 : 0;
 		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
-		AC.flag = (result > 0x09) ? (byte) 1 : 0;
+		// AC.flag = (result > 0x09) ? (byte) 1 : 0;
 	}
 	
 	private void flags_Arith(int result) {
 		Z.flag = (result == 0) ? (byte) 1 : 0;
 		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
-		AC.flag = (result > 0x09) ? (byte) 1 : 0;
+		// AC.flag = (result > 0x09) ? (byte) 1 : 0;
 	}
 	
 	
