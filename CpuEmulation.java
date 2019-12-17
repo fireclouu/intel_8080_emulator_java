@@ -593,6 +593,10 @@ public class CpuEmulation
 					//CALL(opcode);
 					TEST_DIAG(opcode);
 					break; // CALL adr
+				case 0xce:
+					ADC(memory[opcode + 1]);
+					PC.value++;
+					break;  // ACI D8
 					
 				//////   0xd0 - 0xdf   /////
 					
@@ -612,6 +616,10 @@ public class CpuEmulation
 				case 0xd5:
 					PUSH(D, E);
 					break; // PUSH D
+				case 0xd6:
+					SUB(memory[opcode + 1]);
+					PC.value++;
+					break; // SUI D8
 				case 0xda:
 					if (CY.flag == 1) {
 						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
@@ -619,6 +627,10 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // JC adr
+				case 0xde:
+					SBB(memory[opcode + 1]);
+					PC.value++;
+					break; // SBI D8
 					
 				//////   0xe0 - 0xef   /////
 					
@@ -643,7 +655,7 @@ public class CpuEmulation
 					PUSH(H, L);
 					break; // PUSH H
 				case 0xe6:
-					ANI(opcode);
+					ANA(memory[opcode + 1]);
 					PC.value++;
 					break; // ANI D8
 				case 0xea:
@@ -1190,6 +1202,9 @@ public class CpuEmulation
 			case 0xcd:
 				inst = "CALL $" + toHex04((memory[opcode + 2] << 8) + memory[opcode + 1]);
 				break;
+			case 0xce:
+				inst = "ACI #" + toHex02(memory[opcode + 1]);
+				break;
 				
 			/////     0xd0 - 0xdf     /////
 				
@@ -1205,8 +1220,14 @@ public class CpuEmulation
 			case 0xd5:
 				inst = "PUSH D";
 				break;
+			case 0xd6:
+				inst = "SUI #" + toHex02(memory[opcode + 1]);
+				break;
 			case 0xda:
 				inst = "JC #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				break;
+			case 0xde:
+				inst = "SBI #" + toHex02(memory[opcode + 1]);
 				break;
 				
 			/////     0xe0 - 0xef     /////
@@ -1255,6 +1276,9 @@ public class CpuEmulation
 				break;
 			default:
 				inst = "" + toHex02(memory[opcode]) + " is not implemented!";
+				System.out.println(inst);
+				return;
+				
 		}
 		
 		System.out.println(
@@ -1290,15 +1314,10 @@ public class CpuEmulation
 	
 	private void ANA(int var) {
 		A.value = (A.value & var);
+		
 		flags_Arith(A.value);
+		
 		CY.flag = 0;
-	}
-	
-	private void ANI(int opcode) {
-		int res = A.value & memory[opcode + 1];
-		flags_BCD(res);
-		// AC.flag = 0;	// override flag result since AC always set to 0
-		CY.flag = 0;	// override flag result since CY always set to 0
 	}
 	
 	private void CALL(int opcode) {
@@ -1317,12 +1336,11 @@ public class CpuEmulation
 		// complement — defined also as "another set" e.g. another set of binary 1 is binary 0!
 		int res = (A.value + (~var + 1) & 0xff);
 		
-		System.out.println("Value: " + Integer.toHexString(res));
 		Z.flag = ((res & 0xff) == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
-		CY.flag = (var > A.value) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff 
-		//AC.flag = (res > 0x9) ? (byte) 1 : 0;
+		CY.flag = (var > A.value) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff (borrowing)
+		// AC.flag = (res > 0x9) ? (byte) 1 : 0;
 	}
 	
 	private void DAD(Component... rp) {
@@ -1503,15 +1521,39 @@ public class CpuEmulation
 		CY.flag = (byte) (tmp & 0x1);
 	}
 	
+	private void SHLD(int opcode) {
+		int addr = (memory[opcode + 2]) << 8 | memory[opcode + 1];
+		memory[addr + 1] = H.value;
+		memory[addr] = L.value;
+	}
+	
+	private void SBB(int var) {
+		int res = A.value - var - CY.flag;
+		
+		Z.flag = ((res & 0xff) == 0) ? (byte) 1 : 0;
+		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
+		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
+		CY.flag = (var > A.value) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff (borrowing)
+		// AC.flag = (res > 0x9) ? (byte) 1 : 0;
+
+		A.value = res & 0xff;
+	}
+	
 	private void STA(int hi_nib, int lo_nib) {
 		int addr = (hi_nib << 8) | lo_nib;
 		memory[addr] = A.value;
 	}
 	
-	private void SHLD(int opcode) {
-		int addr = (memory[opcode + 2]) << 8 | memory[opcode + 1];
-		memory[addr + 1] = H.value;
-		memory[addr] = L.value;
+	private void SUB(int var) {
+		int res = A.value - var;
+		
+		Z.flag = ((res & 0xff) == 0) ? (byte) 1 : 0;
+		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
+		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
+		CY.flag = (var > A.value) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff (borrowing)
+		// AC.flag = (res > 0x9) ? (byte) 1 : 0;
+		
+		A.value = res & 0xff;
 	}
 	
 	private void XCHG() {
@@ -1540,7 +1582,7 @@ public class CpuEmulation
 	private void DCR(int address) {
 		int res = (memory[address] - 1);
 		
-		Z.flag = (res == 0) ? (byte) 1 : 0;
+		Z.flag = ((res & 0xff)== 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0; // Masking
 		P.flag = parityFlag(res & 0xff);
 		
@@ -1561,14 +1603,14 @@ public class CpuEmulation
 	///  FLAGS  ///
 	private void flags_BCD(int result) {
 		CY.flag = (result > 0xff) ? (byte) 1 : 0;
-		Z.flag = (result == 0) ? (byte) 1 : 0;
+		Z.flag = ((result & 0xff) == 0) ? (byte) 1 : 0;
 		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
 		// AC.flag = (result > 0x09) ? (byte) 1 : 0;
 	}
 	
 	private void flags_Arith(int result) {
-		Z.flag = (result == 0) ? (byte) 1 : 0;
+		Z.flag = ((result & 0xff)== 0) ? (byte) 1 : 0;
 		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
 		// AC.flag = (result > 0x09) ? (byte) 1 : 0;
