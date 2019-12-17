@@ -1334,7 +1334,7 @@ public class CpuEmulation
 		// Need to perform two-complement to achieve such result
 		// a + (two comp. immediate)
 		// complement — defined also as "another set" e.g. another set of binary 1 is binary 0!
-		int res = (A.value + (~var + 1) & 0xff);
+		int res = A.value + ((~var + 1) & 0xff);
 		
 		Z.flag = ((res & 0xff) == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
@@ -1528,7 +1528,7 @@ public class CpuEmulation
 	}
 	
 	private void SBB(int var) {
-		int res = A.value - var - CY.flag;
+		int res = ( A.value + ((~var + 1) & 0xff) ) + ((~CY.flag + 1) & 0xff);
 		
 		Z.flag = ((res & 0xff) == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
@@ -1545,7 +1545,7 @@ public class CpuEmulation
 	}
 	
 	private void SUB(int var) {
-		int res = A.value - var;
+		int res = A.value + ((~var + 1) & 0xff);
 		
 		Z.flag = ((res & 0xff) == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
