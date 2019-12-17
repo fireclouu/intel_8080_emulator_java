@@ -5,8 +5,8 @@ import Cpu.*;
 public class Main
 {
 	///   ROM LENGTH   ///
-	public static final int PROGRAM_LENGTH = 0x10_000;
-	
+	public static final int PROGRAM_LENGTH = 0x8_000;
+
 	///   SPLIT ROMS LIST   ///
 	static final String[] romName = {
 		/*"invaders.h",
@@ -34,7 +34,11 @@ public class Main
 	
 	// MAIN
 	public static void main(String[] args) {
-		startEmulator(FILE_NAME);
+		// startEmulator(FILE_NAME);
+		Stack <Integer> st = new Stack<Integer>();
+		
+		System.out.println(st.toString());
+		// System.out.println(Integer.toBinaryString());
 	}
 	
 	// EMULATION
