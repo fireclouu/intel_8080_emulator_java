@@ -34,11 +34,7 @@ public class Main
 	
 	// MAIN
 	public static void main(String[] args) {
-		// startEmulator(FILE_NAME);
-		Stack <Integer> st = new Stack<Integer>();
-		
-		System.out.println(st.toString());
-		// System.out.println(Integer.toBinaryString());
+		startEmulator(FILE_NAME);
 	}
 	
 	// EMULATION
