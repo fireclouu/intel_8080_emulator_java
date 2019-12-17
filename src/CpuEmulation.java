@@ -1294,7 +1294,7 @@ public class CpuEmulation
 		System.out.println();
 	}
 	
-	// TODO: Check aux. carry
+	// TODO: verify aux. cary, failing
 	///  SUBROUTINES  ///
 	private void ADC(int var) {
 		int res = (A.value + var) + CY.flag;
@@ -1331,16 +1331,14 @@ public class CpuEmulation
 	
 	// Dedicate individual flag checks
 	private void CMP(int var) {
-		// Need to perform two-complement to achieve such result
-		// a + (two comp. immediate)
-		// complement — defined also as "another set" e.g. another set of binary 1 is binary 0!
+		// (two's) complement — defined also as "another set" e.g. another set of binary 1 is binary 0!
 		int res = A.value + ((~var + 1) & 0xff);
 		
 		Z.flag = ((res & 0xff) == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
 		CY.flag = (var > A.value) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff (borrowing)
-		// AC.flag = (res > 0x9) ? (byte) 1 : 0;
+		// AC.flag = -1;
 	}
 	
 	private void DAD(Component... rp) {
@@ -1517,8 +1515,7 @@ public class CpuEmulation
 	private void RRC() {
 		int tmp = A.value;
 		A.value = (tmp >>> 1) | (tmp << 7); // Rotate right shift (zero fill), then rotate 7 right shift, flipping bit 0 if 1 (carry)
-		// CY.flag = ((tmp >>> 7) > 0) ? (byte) 1 : 0; // carry if bit 7 is 1
-		CY.flag = (byte) (tmp & 0x1);
+		CY.flag = (byte) (tmp & 0x1); // verify
 	}
 	
 	private void SHLD(int opcode) {
@@ -1534,7 +1531,7 @@ public class CpuEmulation
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
 		CY.flag = (var > A.value) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff (borrowing)
-		// AC.flag = (res > 0x9) ? (byte) 1 : 0;
+		// AC.flag = -1; // NULL 
 
 		A.value = res & 0xff;
 	}
@@ -1551,7 +1548,7 @@ public class CpuEmulation
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
 		CY.flag = (var > A.value) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff (borrowing)
-		// AC.flag = (res > 0x9) ? (byte) 1 : 0;
+		// AC.flag = -1; // NULL
 		
 		A.value = res & 0xff;
 	}
@@ -1572,7 +1569,7 @@ public class CpuEmulation
 		
 		flags_BCD(var);
 		CY.flag = 0;
-		// AC.flag = 0;
+		// AC.flag = 0; // fixed?
 		
 		A.value = res;
 	}
@@ -1583,7 +1580,7 @@ public class CpuEmulation
 		int res = (memory[address] - 1);
 		
 		Z.flag = ((res & 0xff)== 0) ? (byte) 1 : 0;
-		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0; // Masking
+		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(res & 0xff);
 		
 		memory[address] = res & 0xff;
@@ -1606,14 +1603,14 @@ public class CpuEmulation
 		Z.flag = ((result & 0xff) == 0) ? (byte) 1 : 0;
 		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
-		// AC.flag = (result > 0x09) ? (byte) 1 : 0;
+		// AC.flag = -1; // NULL
 	}
 	
 	private void flags_Arith(int result) {
 		Z.flag = ((result & 0xff)== 0) ? (byte) 1 : 0;
 		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
-		// AC.flag = (result > 0x09) ? (byte) 1 : 0;
+		// AC.flag = -1; // NULL
 	}
 	
 	
@@ -1667,34 +1664,31 @@ public class CpuEmulation
 	
 	private void TEST_DIAG(int opcode) {
 		// SOURCE: kpmiller (i8080.c)
-		if (5 ==  ((memory[opcode + 2] << 8) | memory[opcode + 1]))
-		{
-			if (C.value == 9)
-			{
-				int offset = (D.value<<8) | (E.value);
+		if (5 == ((memory[opcode + 2] << 8) | memory[opcode + 1])) {
+			
+			if (C.value == 9) {
+				int offset = (D.value << 8) | (E.value);
 				int str = offset + 3;  //skip the prefix bytes
 				char read;
 				while ((read = (char)memory[str]) != '$') {
 					System.out.print(read);
 					str++;
 				}
+				
 				System.out.println();
-			}
-			else if (C.value == 2)
-			{
+				
+			} else if (C.value == 2) {
 				System.out.println ("print char routine called\n");
 			}
-		}
-		else if (0 ==  ((memory[opcode + 2] << 8) | memory[opcode + 1]))
-		{
-			System.exit(0);
-		}
-		else
-		{
+			
+		} else if (0 ==  ((memory[opcode + 2] << 8) | memory[opcode + 1])) {
+			// System.exit(0);
+			System.out.println("-- System called for exit --");
+		} else {
 			int  ret = PC.value + 2;
-			memory[SP.value-1] = (ret >> 8) & 0xff;
-			memory[SP.value-2] = (ret & 0xff);
-			SP.value=( SP.value - 2) & 0xffff;
+			memory[SP.value - 1] = (ret >> 8) & 0xff;
+			memory[SP.value - 2] = (ret & 0xff);
+			SP.value=(SP.value - 2) & 0xffff;
 			PC.value= (memory[opcode + 2] << 8) | memory[opcode + 1];
 		}
 	}
