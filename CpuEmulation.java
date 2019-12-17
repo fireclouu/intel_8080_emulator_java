@@ -9,7 +9,7 @@ public class CpuEmulation
 	   - strict handling of 0xff (8 bit), 0xffff (16 bit) addresses, java only offers signed data types
 	*/
 	
-	/// OFFSET (use to correctly display memory address of ROMS that is not loaded on 0x0
+	/// OFFSET (use to correctly display memory address of ROMS that is not loaded on 0x0)
 	int fileDirectAddr = Main.romAddr[0];
 	
 	///  DECLARE CPU COMPONENTS  ///
@@ -1442,7 +1442,7 @@ public class CpuEmulation
 		
 		CY.flag = ((PSW & PSW_FLAG_POS_CY) != 0) ? (byte) 1 : 0;
 		P.flag  = ((PSW & PSW_FLAG_POS_PA) != 0) ? (byte) 1 : 0;
-		//AC.flag = ((PSW & PSW_FLAG_POS_AC) != 0) ? (byte) 1 : 0;
+		AC.flag = ((PSW & PSW_FLAG_POS_AC) != 0) ? (byte) 1 : 0;
 		Z.flag  = ((PSW & PSW_FLAG_POS_ZE) != 0) ? (byte) 1 : 0;
 		S.flag  = ((PSW & PSW_FLAG_POS_SN) != 0) ? (byte) 1 : 0;
 		
