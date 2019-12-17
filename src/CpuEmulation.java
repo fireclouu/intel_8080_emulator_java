@@ -10,7 +10,7 @@ public class CpuEmulation
 	*/
 	
 	/// OFFSET (use to correctly display memory address of ROMS that is not loaded on 0x0)
-	int fileDirectAddr = Main.romAddr[0];
+	int directAddr = Main.romAddr[0];
 	
 	///  DECLARE CPU COMPONENTS  ///
 	public static Component B, C, D, E, H, L, A;
@@ -33,8 +33,10 @@ public class CpuEmulation
 		memory = rom;
 		System.out.println("Start emulator...\n");
 		
+		// TESTING PURPOSES
+		TEST_OVERRIDE();
+		
 		// Start emulation loop
-		cpuOverride();
 		emulate8080();
 		
 		System.out.println("\nEnd emulator...");
@@ -50,7 +52,7 @@ public class CpuEmulation
 			// HL (M)
 			int addr = ((H.value << 8) | L.value);
 			
-			// increment PC
+			// increment PC every calls
 			PC.value++;
 			
 			// print instruction
@@ -421,6 +423,7 @@ public class CpuEmulation
 					memory[addr] = L.value;
 					break; // MOV M, L
 				case 0x76:
+					// System.exit(0); // terminate program
 					return; // HLT
 				case 0x77:
 					memory[addr] = A.value;
@@ -692,7 +695,7 @@ public class CpuEmulation
 					}
 					break; // JM adr	
 				case 0xfb:
-					// TODO: needs to implement!
+					// TODO: needs to implement, when interrupts added
 					break; // EI
 				case 0xfe:
 					CMP(memory[opcode + 1]);
@@ -1269,7 +1272,7 @@ public class CpuEmulation
 				inst = "JM #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
 				break;
 			case 0xfb:
-				inst = "EI (unimplemented)";
+				inst = "EI (unimplemented)"; // Skipped
 				break;
 			case 0xfe:
  				inst = "CPI #" + toHex02(memory[opcode + 1]);
@@ -1289,7 +1292,7 @@ public class CpuEmulation
 		System.out.println(
 			"CY: " + CY.flag + " | ZR: " + Z.flag + " | PA: " + P.flag + " | SN: " + S.flag /*+ " | AC: " + AC.flag*/);
 		
-		System.out.println("SP: " + toHex04(SP.value) + " | (" + toHex02(memory[opcode]) + ") | FILE_ADDR: " + toHex04(opcode - this.fileDirectAddr) + " | PC: " + toHex04(opcode) + "  " + inst);
+		System.out.println("SP: " + toHex04(SP.value) + " | (" + toHex02(memory[opcode]) + ") | FILE_ADDR: " + toHex04(opcode - this.directAddr) + " | PC: " + toHex04(opcode) + "  " + inst);
 		
 		System.out.println();
 	}
@@ -1322,14 +1325,13 @@ public class CpuEmulation
 	
 	private void CALL(int opcode) {
 		int nextAddr = opcode + 3;
-		memory[SP.value - 1] = ((nextAddr >> 8) & 0xff); // Store rightmost 8bit addr
+		memory[SP.value - 1] = ((nextAddr >> 8) & 0xff);
 		memory[SP.value - 2] = (nextAddr & 0xff);
 		SP.value -= 2;
 		
 		PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
 	}
 	
-	// Dedicate individual flag checks
 	private void CMP(int var) {
 		// (two's) complement — defined also as "another set" e.g. another set of binary 1 is binary 0!
 		int res = A.value + ((~var + 1) & 0xff);
@@ -1342,7 +1344,7 @@ public class CpuEmulation
 	}
 	
 	private void DAD(Component... rp) {
-		int HL = (H.value << 8) | L.value; // (bits) 8 + 8 = 16
+		int HL = (H.value << 8) | L.value; // addr = 16bit
 		
 		int pair;
 		if(rp.length == 2) {
@@ -1387,7 +1389,7 @@ public class CpuEmulation
 	
 	private void INR(Component reg) {
 		int res = reg.value + 1;
-		reg.value = res & 0xff; // ensure it only takes 8-bit
+		reg.value = res & 0xff;
 		
 		flags_Arith(res);
 		
@@ -1417,8 +1419,8 @@ public class CpuEmulation
 	private void LXI(int opcode, Component... rp) {
 		if(rp.length == 2) {
 			// Register Pair
-			rp[0].value = memory[opcode + 2];	// RP 1 = byte 3
-			rp[1].value = memory[opcode + 1];	// RP 2 = byte 2
+			rp[0].value = memory[opcode + 2];
+			rp[1].value = memory[opcode + 1];
 		} else {
 			// 16-bit variable (SP)
 			rp[0].value = ((memory[opcode + 2] << 8) | memory[opcode + 1]);
@@ -1481,7 +1483,7 @@ public class CpuEmulation
 			(AC.flag << PSW_FLAG_POS_AC) 	| 	// place aux. carry flag status on pos 4
 			(Z.flag  << PSW_FLAG_POS_ZE)  	|	// place zero flag status on pos 6
 			(S.flag  << PSW_FLAG_POS_SN) )	| 	// place sign flag status on pos 7
-			(0x0);								// set zero skipped empty positions
+			(0x0);								// set zero to skipped empty positions
 			
 		SP.value -= 2;
 
@@ -1529,7 +1531,7 @@ public class CpuEmulation
 		
 		Z.flag = ((res & 0xff) == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
-		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
+		P.flag = parityFlag(res & 0xff);
 		CY.flag = (var > A.value) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff (borrowing)
 		// AC.flag = -1; // NULL 
 
@@ -1546,7 +1548,7 @@ public class CpuEmulation
 		
 		Z.flag = ((res & 0xff) == 0) ? (byte) 1 : 0;
 		S.flag = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
-		P.flag = parityFlag(res & 0xff);  // ensuring only checks for 8-bit variable
+		P.flag = parityFlag(res & 0xff);
 		CY.flag = (var > A.value) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff (borrowing)
 		// AC.flag = -1; // NULL
 		
@@ -1649,9 +1651,9 @@ public class CpuEmulation
 	}
 	
 	// CPU OVERRIDE
-	private void cpuOverride() {
-		// JMP 0x0100 (load also file in 0x100)
-		PC.value = this.fileDirectAddr;
+	private void TEST_OVERRIDE() {
+		// Direct PC to loaded address
+		PC.value = this.directAddr;
 		
 		// fix sp
 		memory[368] = 0x07;
@@ -1663,13 +1665,14 @@ public class CpuEmulation
 	}
 	
 	private void TEST_DIAG(int opcode) {
-		// SOURCE: kpmiller (i8080.c)
+		// SOURCE: kpmiller — Full 8080 emulation
 		if (5 == ((memory[opcode + 2] << 8) | memory[opcode + 1])) {
 			
 			if (C.value == 9) {
 				int offset = (D.value << 8) | (E.value);
 				int str = offset + 3;  //skip the prefix bytes
 				char read;
+				
 				while ((read = (char)memory[str]) != '$') {
 					System.out.print(read);
 					str++;
