@@ -671,6 +671,10 @@ public class CpuEmulation
 				case 0xeb:
 					XCHG();
 					break; // XCHG (HL to DE vice-versa)
+				case 0xee:
+					XRA(memory[opcode + 1]);
+					PC.value++;
+					break; // XRI D8
 					
 				//////   0xf0 - 0xff   /////
 					
@@ -687,6 +691,10 @@ public class CpuEmulation
 				case 0xf5:
 					PUSH_PSW();
 					break; // PUSH PSW
+				case 0xf6:
+					ORA(memory[opcode + 1]);
+					PC.value++;
+					break; // ORI D8
 				case 0xfa:
 					if (S.flag == 1) {
 						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
@@ -1256,6 +1264,9 @@ public class CpuEmulation
 			case 0xeb:
 				inst = "XCHG";
 				break;
+			case 0xee:
+ 				inst = "XRI #" + toHex02(memory[opcode + 1]);
+				break;
 				
 			/////     0xf0 - 0xff     /////
 				
@@ -1267,6 +1278,9 @@ public class CpuEmulation
 				break;
 			case 0xf5:
 				inst = "PUSH PSW";
+				break;
+			case 0xf6:
+				inst = "ORI #" + toHex02(memory[opcode + 1]);
 				break;
 			case 0xfa:
 				inst = "JM #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
@@ -1318,7 +1332,7 @@ public class CpuEmulation
 	private void ANA(int var) {
 		A.value = (A.value & var);
 		
-		flags_Arith(A.value);
+		flags_zsp(A.value);
 		
 		CY.flag = 0;
 	}
@@ -1366,7 +1380,7 @@ public class CpuEmulation
 		int res = reg.value - 1;
 		reg.value = res & 0xff;
 		
-		flags_Arith(res);
+		flags_zsp(res);
 	}
 	
 	private void DCX(Component... rp) {
@@ -1391,7 +1405,7 @@ public class CpuEmulation
 		int res = reg.value + 1;
 		reg.value = res & 0xff;
 		
-		flags_Arith(res);
+		flags_zsp(res);
 		
 	}
 	
@@ -1429,6 +1443,15 @@ public class CpuEmulation
 	
 	private void MVI(int opcode, Component reg) {
 		reg.value = memory[opcode + 1];
+	}
+	
+	private void ORA(int var) {
+		int res = A.value | var;
+		
+		flags_zsp(res);
+		CY.flag = 0; // fixed value
+		
+		A.value = res;
 	}
 	
 	private void POP(Component... rp) {
@@ -1592,7 +1615,7 @@ public class CpuEmulation
 		int res = memory[address] + 1;
 		memory[address] = res & 0xff; // ensure it only takes 8-bit
 		
-		flags_Arith(res);
+		flags_zsp(res);
 	}
 	
 	private void MVI(int opcode, int address) {
@@ -1608,7 +1631,7 @@ public class CpuEmulation
 		// AC.flag = -1; // NULL
 	}
 	
-	private void flags_Arith(int result) {
+	private void flags_zsp(int result) {
 		Z.flag = ((result & 0xff)== 0) ? (byte) 1 : 0;
 		S.flag = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		P.flag = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
