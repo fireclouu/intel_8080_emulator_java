@@ -1592,7 +1592,7 @@ public class CpuEmulation
 	private void XRA(int var) {
 		int res = A.value ^ var;
 		
-		flags_BCD(var);
+		flags_zsp(res);
 		CY.flag = 0;
 		// AC.flag = 0; // fixed?
 		
