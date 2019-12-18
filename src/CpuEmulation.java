@@ -1921,14 +1921,15 @@ public class CpuEmulation
 	}
 	
 	private void XCHG() {
-		int hold_h = H.value;
-		int hold_l = L.value;
+		// SWAP H and D
+		H.value = H.value + D.value;
+		D.value = H.value - D.value;
+		H.value = H.value - D.value;
 		
-		H.value = D.value;
-		L.value = E.value;
-		
-		D.value = hold_h;
-		E.value = hold_l;
+		// SWAP L and E
+		L.value = L.value + E.value;
+		E.value = L.value - E.value;
+		L.value = L.value - E.value;
 	}
 	
 	private void XRA(int var) {
