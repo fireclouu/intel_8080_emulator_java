@@ -735,7 +735,7 @@ public class CpuEmulation
 				//////   0xe0 - 0xef   /////
 				
 				case 0xe0: 
-					if (CY.flag == 0) {
+					if (P.flag == 0) {
 						RET();
 					}
 					break; // RPO
