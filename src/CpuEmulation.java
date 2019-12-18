@@ -174,6 +174,7 @@ public class CpuEmulation
 					break; // LXI H, D16
 				case 0x22:
 					SHLD(opcode);
+					PC.value += 2;
 					break; // SHLD adr
 				case 0x23:
 					INX(H, L);
@@ -194,6 +195,10 @@ public class CpuEmulation
 				case 0x29:
 					DAD(H, L);
 					break; //DAD H
+				case 0x2a:
+					LHLD(opcode);
+					PC.value += 2;
+					break; // LHLD adr
 				case 0x2b:
 					DCX(H, L);
 					break; // DCX H
@@ -207,6 +212,9 @@ public class CpuEmulation
 					MVI(opcode, L);
 					PC.value++;
 					break; // MVI L, D8
+				case 0x2f:
+					A.value = (~A.value & 0xff);
+					break; // CMA
 					
 				//////   0x30 - 0x3f   /////
 					
@@ -231,6 +239,11 @@ public class CpuEmulation
 					MVI(opcode, addr);
 					PC.value++;
 					break; // MVI M, D8
+				case 0x37:
+					CY.flag = 1;
+					break; // STC
+				case 0x38:
+					break; // -
 				case 0x39:
 					DAD(SP);
 					break; //DAD SP
@@ -251,6 +264,9 @@ public class CpuEmulation
 					MVI(opcode, A);
 					PC.value++;
 					break; // MVI A, D8
+				case 0x3f:
+					CY.flag = (CY.flag == 1) ? (byte) 0 : 1;
+					break; // CMC
 					
 				//////   0x40 - 0x4f   /////
 					
@@ -917,7 +933,7 @@ public class CpuEmulation
 				inst = "NOP";
 				break;
 			case 0x01:
-				inst = "LXI B, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "LXI B, #" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0x02:
 				inst = "STAX B";
@@ -968,7 +984,7 @@ public class CpuEmulation
 				inst = " - ";
 				break;
 			case 0x11:
-				inst = "LXI D, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "LXI D, #" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0x12:
 				inst = "STAX B";
@@ -1012,14 +1028,17 @@ public class CpuEmulation
 			case 0x1f:
 				inst = "RAR";
 				break;
+				
+			/////     0x20 - 0x2f     /////
+				
 			case 0x20:
 				inst = " - ";
 				break;
 			case 0x21:
-				inst = "LXI H, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "LXI H, #" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0x22:
-				inst = "SHLD #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "SHLD #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0x23:
 				inst = "INX H";
@@ -1039,6 +1058,9 @@ public class CpuEmulation
 			case 0x29:
 				inst = "DAD H";
 				break;
+			case 0x2a:
+				inst = "LHLD #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
+				break;
 			case 0x2b:
 				inst = "DCX H";
 				break;
@@ -1051,11 +1073,17 @@ public class CpuEmulation
 			case 0x2e:
 				inst = "MVI L, #" + toHex02(memory[opcode + 1]);
 				break;
+			case 0x2f:
+				inst = "CMA";
+				break;
+				
+			/////     0x30 - 0x3f     /////
+				
 			case 0x31:
-				inst = "LXI SP, #" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "LXI SP, #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0x32:
-				inst = "STA #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "STA #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0x33:
 				inst = "INX SP";
@@ -1068,6 +1096,12 @@ public class CpuEmulation
 				break;
 			case 0x36:
 				inst = "MVI M, #" + toHex02(memory[opcode + 1]);
+				break;
+			case 0x37:
+				inst = "STC";
+				break;
+			case 0x38:
+				inst = " - ";
 				break;
 			case 0x39:
 				inst = "DAD SP";
@@ -1087,6 +1121,12 @@ public class CpuEmulation
 			case 0x3e:
 				inst = "MVI A, #" + toHex02(memory[opcode + 1]);
 				break;
+			case 0x3f:
+				inst = "CMC";
+				break;
+			
+			/////     0x40 - 0x4f     /////
+				
 			case 0x40:
 				inst = "MOV B, B";
 				break;
@@ -1665,17 +1705,13 @@ public class CpuEmulation
 	
 	private void ADD(int var) {
 		int res = A.value + var;
-		
 		flags_BCD(res);
-		
 		A.value = res & 0xff;
 	}
 	
 	private void ANA(int var) {
 		A.value = (A.value & var);
-		
 		flags_zsp(A.value);
-		
 		CY.flag = 0;
 	}
 	
@@ -1770,6 +1806,13 @@ public class CpuEmulation
 	private void LDA(int hi_nib, int lo_nib) {
 		int addr = (hi_nib << 8) | lo_nib;
 		A.value = memory[addr];
+	}
+	
+	private void LHLD(int opcode) {
+		int addr = (memory[opcode + 2] << 8) | memory[opcode + 1];
+		
+		H.value = memory[addr + 1];
+		L.value = memory[addr];
 	}
 	
 	private void LXI(int opcode, Component... rp) {
@@ -1874,21 +1917,15 @@ public class CpuEmulation
 	}
 	
 	private void RLC() {
-		int tmp = A.value;
-		A.value = (tmp << 1) | (tmp >>> 7); // Rotate left shift, then rotate 7 right shift, flipping bit 0 if 1 (carry)	
-		CY.flag = ((tmp >>> 7) > 0) ? (byte) 1 : 0; // carry if bit 7 is 1
+		int res = (A.value << 1); // Rotate left shift
+		CY.flag = (res > 0xff) ? (byte) 1 : 0; // normal carry check
+		A.value = (res + CY.flag) & 0xff; // rotated value plus its carry flag 
 	}
 	
 	private void RRC() {
-		int tmp = A.value;
-		A.value = (tmp >>> 1) | (tmp << 7); // Rotate right shift (zero fill), then rotate 7 right shift, flipping bit 0 if 1 (carry)
-		CY.flag = (byte) (tmp & 0x1); // verify
-	}
-	
-	private void SHLD(int opcode) {
-		int addr = (memory[opcode + 2]) << 8 | memory[opcode + 1];
-		memory[addr + 1] = H.value;
-		memory[addr] = L.value;
+		int res = (A.value >>> 1); // Rotate right shift (zero fill)
+		CY.flag = ((A.value & 0x1) == 0x1) ? (byte) 1 : 0; // left bit 0 as carry
+		A.value = (res | (CY.flag << 7)) & 0xff; // update Accumulator with rotated value with its carry flag leftmost bit (0xff)
 	}
 	
 	private void SBB(int var) {
@@ -1901,6 +1938,13 @@ public class CpuEmulation
 		// AC.flag = -1; // NULL 
 
 		A.value = res & 0xff;
+	}
+	
+	private void SHLD(int opcode) {
+		int addr = (memory[opcode + 2] << 8) | memory[opcode + 1];
+		
+		memory[addr + 1] = H.value;
+		memory[addr] = L.value;
 	}
 	
 	private void STA(int hi_nib, int lo_nib) {
