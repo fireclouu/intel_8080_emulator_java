@@ -1730,7 +1730,7 @@ public class CpuEmulation
 			// Register Pair
 			rp[1].value--;
 
-			if (rp[1].value == 0xff) {
+			if ((rp[1].value & 0xff) == 0xff) { // this is an issue since 0 - 1 , in java, will result to -1 instead of 255 or 0xff
 				rp[0].value--;
 			}
 
@@ -2045,7 +2045,6 @@ public class CpuEmulation
 				}
 				
 				System.out.println();
-				
 			} else if (C.value == 2) {
 				System.out.println ("print char routine called\n");
 			}
