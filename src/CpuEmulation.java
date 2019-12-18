@@ -1857,6 +1857,8 @@ public class CpuEmulation
 		A.value = memory[SP.value + 1];
 
 		SP.value += 2;
+		
+		System.out.println(Integer.toBinaryString(PSW));
 	}
 	
 	private void PUSH(Component... rp) {
@@ -1870,44 +1872,41 @@ public class CpuEmulation
 
 		memory[SP.value - 1] = A.value;
 		
-		/*
-			pos 1, 3, 5 have fixed value
-			pos 1 = 1
-			pos 3 and pos 5 = 0
-		*/
-
-		/* 
-			pos 0 = carry
-			pos 2 = parity
-			pos 4 = aux carry
-			pos 6 = zero
-			pos 7 = sign
-		*/
-
-		memory[SP.value - 2] = (
-			(CY.flag & PSW_FLAG_POS_CY) 	|	// place carry flag status on pos 0
-			(0b10)		  					|	// place fixed value "1" on pos 1
-			(P.flag  << PSW_FLAG_POS_PA)  	|	// place parity flag status on pos 2
-			(AC.flag << PSW_FLAG_POS_AC) 	| 	// place aux. carry flag status on pos 4
-			(Z.flag  << PSW_FLAG_POS_ZE)  	|	// place zero flag status on pos 6
-			(S.flag  << PSW_FLAG_POS_SN) )	| 	// place sign flag status on pos 7
-			(0x0);								// set zero to skipped empty positions
+		// place carry flag status on pos 0
+		// place fixed value "1" on pos 1
+		// place parity flag status on pos 2
+		// place fixed 0 on pos 3
+		// place aux. carry flag status on pos 4
+		// place fixed 0 on pos 5
+		// place zero flag status on pos 6
+		// place sign flag status on pos 7
 			
+		int PSW = S.flag;
+		PSW = (PSW << 1) | Z.flag;
+		PSW = (PSW << 1);
+		PSW = (PSW << 1) | AC.flag;
+		PSW = (PSW << 1);
+		PSW = (PSW << 1) | P.flag;
+		PSW = (PSW << 1) | 1;
+		PSW = (PSW << 1) | CY.flag;
+			
+		memory[SP.value - 2] = PSW;
+			
+		System.out.println(Integer.toBinaryString(memory[SP.value - 2]));
 		SP.value -= 2;
 
 	}
 	
 	private void RAL() {
-		int tmp = A.value;
-		A.value = (tmp << 1) | CY.flag;
-		CY.flag = (byte) (tmp >> 7);
+		int res = (A.value + CY.flag) << 1; // verify
+		CY.flag = (res > 0xff) ? (byte) 1 : 0;
+		A.value = res & 0xff;
 	}
 	
 	private void RAR() {
-		int tmp = A.value;
-		int mask = ((A.value >>> 7) << 7); // Right shift to 7, left shift to 7 (0x80 or 0x0)
-		A.value = (tmp >> 1) | mask;
-		CY.flag = (byte) (tmp & 0x1);
+		int res = (A.value + CY.flag) >> 1; // verify
+		CY.flag = (byte) (A.value & 0x1); // leftover bit 0 as carry
+		A.value = (res | CY.flag) & 0xff;
 	}
 	
 	private void RET() {
@@ -1924,7 +1923,7 @@ public class CpuEmulation
 	
 	private void RRC() {
 		int res = (A.value >>> 1); // Rotate right shift (zero fill)
-		CY.flag = ((A.value & 0x1) == 0x1) ? (byte) 1 : 0; // left bit 0 as carry
+		CY.flag = (byte) (A.value & 0x1); // leftover bit 0 as carry
 		A.value = (res | (CY.flag << 7)) & 0xff; // update Accumulator with rotated value with its carry flag leftmost bit (0xff)
 	}
 	
