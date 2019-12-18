@@ -1857,8 +1857,6 @@ public class CpuEmulation
 		A.value = memory[SP.value + 1];
 
 		SP.value += 2;
-		
-		System.out.println(Integer.toBinaryString(PSW));
 	}
 	
 	private void PUSH(Component... rp) {
@@ -1891,10 +1889,8 @@ public class CpuEmulation
 		PSW = (PSW << 1) | CY.flag;
 			
 		memory[SP.value - 2] = PSW;
-			
-		System.out.println(Integer.toBinaryString(memory[SP.value - 2]));
+		
 		SP.value -= 2;
-
 	}
 	
 	private void RAL() {
