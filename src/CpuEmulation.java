@@ -560,8 +560,62 @@ public class CpuEmulation
 					
 				//////   0xb0 - 0xbf   /////
 				
+				case 0xb0:
+					ORA(B.value);
+					break; // ORA B
+				case 0xb1:
+					ORA(C.value);
+					break; // ORA C
+				case 0xb2:
+					ORA(D.value);
+					break; // ORA D
+				case 0xb3:
+					ORA(E.value);
+					break; // ORA E
+				case 0xb4:
+					ORA(H.value);
+					break; // ORA H
+				case 0xb5:
+					ORA(L.value);
+					break; // ORA L
+				case 0xb6:
+					ORA(memory[addr]);
+					break; // ORA M
+				case 0xb7:
+					ORA(A.value);
+					break; // ORA A
+				case 0xb8:
+					CMP(B.value);
+					break; // CMP B
+				case 0xb9:
+					CMP(C.value);
+					break; // CMP C
+				case 0xba:
+					CMP(D.value);
+					break; // CMP D
+				case 0xbb:
+					CMP(E.value);
+					break; // CMP E
+				case 0xbc:
+					CMP(H.value);
+					break; // CMP H
+				case 0xbd:
+					CMP(L.value);
+					break; // CMP L
+				case 0xbe:
+					CMP(memory[addr]);
+					break; // CMP M
+				case 0xbf:
+					CMP(A.value);
+					break; // CMP A
+					
 				//////   0xc0 - 0xcf   /////
 				
+				case 0xc0: 
+					if (Z.flag == 0) {
+						RET();
+					}
+					break; // RNZ
 				case 0xc1:
 					POP(B, C);
 					break; // POP B
@@ -575,6 +629,13 @@ public class CpuEmulation
 				case 0xc3:
 					PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
 					break; // JMP adr
+				case 0xc4:
+					if (Z.flag == 0) {
+						CALL(opcode);
+					} else {
+						PC.value += 2;
+					}
+					break; // CNZ adr
 				case 0xc5:
 					PUSH(B, C);
 					break; // PUSH B
@@ -582,6 +643,11 @@ public class CpuEmulation
 					ADD(memory[opcode + 1]);
 					PC.value++;
 					break; // ADI D8
+				case 0xc8:
+					if (Z.flag == 1) {
+						RET();
+					}
+					break; // RZ
 				case 0xc9:
 					RET();
 					break; // RET
@@ -592,6 +658,13 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // JZ adr
+				case 0xcc:
+					if (Z.flag == 1) {
+						CALL(opcode);
+					} else {
+						PC.value += 2;
+					}
+					break; // CZ adr
 				case 0xcd:
 					//CALL(opcode);
 					TEST_DIAG(opcode);
@@ -602,7 +675,12 @@ public class CpuEmulation
 					break;  // ACI D8
 					
 				//////   0xd0 - 0xdf   /////
-					
+				
+				case 0xd0: 
+					if (CY.flag == 0) {
+						RET();
+					}
+					break; // RNC
 				case 0xd1:
 					POP(D, E);
 					break; // POP D
@@ -616,6 +694,13 @@ public class CpuEmulation
 				case 0xd3:
 					PC.value++;
 					break; // OUT D8
+				case 0xd4:
+					if (CY.flag == 0) {
+						CALL(opcode);
+					} else {
+						PC.value += 2;
+					}
+					break; // CNC adr
 				case 0xd5:
 					PUSH(D, E);
 					break; // PUSH D
@@ -623,6 +708,11 @@ public class CpuEmulation
 					SUB(memory[opcode + 1]);
 					PC.value++;
 					break; // SUI D8
+				case 0xd8: 
+					if (CY.flag == 1) {
+						RET();
+					}
+					break; // RC
 				case 0xda:
 					if (CY.flag == 1) {
 						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
@@ -630,13 +720,25 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // JC adr
+				case 0xdc:
+					if (CY.flag == 1) {
+						CALL(opcode);
+					} else {
+						PC.value += 2;
+					}
+					break; // CC adr
 				case 0xde:
 					SBB(memory[opcode + 1]);
 					PC.value++;
 					break; // SBI D8
 					
 				//////   0xe0 - 0xef   /////
-					
+				
+				case 0xe0: 
+					if (CY.flag == 0) {
+						RET();
+					}
+					break; // RPO
 				case 0xe1:
 					POP(H, L);
 					break; // POP H
@@ -661,6 +763,11 @@ public class CpuEmulation
 					ANA(memory[opcode + 1]);
 					PC.value++;
 					break; // ANI D8
+				case 0xe8: 
+					if (P.flag == 1) {
+						RET();
+					}
+					break; // RPE
 				case 0xea:
 					if (P.flag == 1) {
 						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
@@ -671,13 +778,25 @@ public class CpuEmulation
 				case 0xeb:
 					XCHG();
 					break; // XCHG (HL to DE vice-versa)
+				case 0xec:
+					if (P.flag == 1) {
+						CALL(opcode);
+					} else {
+						PC.value += 2;
+					}
+					break; // CPE adr
 				case 0xee:
 					XRA(memory[opcode + 1]);
 					PC.value++;
 					break; // XRI D8
 					
 				//////   0xf0 - 0xff   /////
-					
+				
+				case 0xf0: 
+					if (S.flag == 0) {
+						RET();
+					}
+					break; // RP
 				case 0xf1:
 					POP_PSW();
 					break; // POP PSW
@@ -687,7 +806,14 @@ public class CpuEmulation
 					} else {
 						PC.value += 2;
 					}
-					break; // JP adr	
+					break; // JP adr
+				case 0xf4:
+					if (S.flag == 0) {
+						CALL(opcode);
+					} else {
+						PC.value += 2;
+					}
+					break; // CP adr
 				case 0xf5:
 					PUSH_PSW();
 					break; // PUSH PSW
@@ -695,6 +821,11 @@ public class CpuEmulation
 					ORA(memory[opcode + 1]);
 					PC.value++;
 					break; // ORI D8
+				case 0xf8: 
+					if (S.flag == 1) {
+						RET();
+					}
+					break; // RM
 				case 0xfa:
 					if (S.flag == 1) {
 						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
@@ -705,6 +836,13 @@ public class CpuEmulation
 				case 0xfb:
 					// TODO: needs to implement, when interrupts added
 					break; // EI
+				case 0xfc:
+					if (S.flag == 1) {
+						CALL(opcode);
+					} else {
+						PC.value += 2;
+					}
+					break; // CM adr
 				case 0xfe:
 					CMP(memory[opcode + 1]);
 					PC.value++;
@@ -1189,14 +1327,74 @@ public class CpuEmulation
 			case 0xaf:
 				inst = "XRA A";
 				break;
+				
+			/////     0xb0 - 0xbf     /////
+			
+			case 0xb0:
+				inst = "ORA B";
+				break;
+			case 0xb1:
+				inst = "ORA C";
+				break;
+			case 0xb2:
+				inst = "ORA D";
+				break;
+			case 0xb3:
+				inst = "ORA E";
+				break;
+			case 0xb4:
+				inst = "ORA H";
+				break;
+			case 0xb5:
+				inst = "ORA L";
+				break;
+			case 0xb6:
+				inst = "ORA M";
+				break;
+			case 0xb7:
+				inst = "ORA A";
+				break;
+			case 0xb8:
+				inst = "CMP B";
+				break;
+			case 0xb9:
+				inst = "CMP C";
+				break;
+			case 0xba:
+				inst = "CMP D";
+				break;
+			case 0xbb:
+				inst = "CMP E";
+				break;
+			case 0xbc:
+				inst = "CMP H";
+				break;
+			case 0xbd:
+				inst = "CMP L";
+				break;
+			case 0xbe:
+				inst = "CMP M";
+				break;
+			case 0xbf:
+				inst = "CMP A";
+				break;
+				
+			/////     0xc0 - 0xcf     /////
+			
+			case 0xc0:
+				inst = "RNZ";
+				break;
 			case 0xc1:
 				inst = "POP B";
 				break;
 			case 0xc2:
-				inst = "JNZ $" + toHex04((memory[opcode + 2] << 8) + memory[opcode + 1]);
+				inst = "JNZ $" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xc3:
-				inst = "JMP $" + toHex04((memory[opcode + 2] << 8) + memory[opcode+1]);
+				inst = "JMP #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
+				break;
+			case 0xc4:
+				inst = "CNZ #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xc5:
 				inst = "PUSH B";
@@ -1204,53 +1402,74 @@ public class CpuEmulation
 			case 0xc6:
 				inst = "ADI #" + toHex02(memory[opcode + 1]);
 				break;
+			case 0xc8:
+				inst = "RZ";
+				break;
 			case 0xc9:
 				inst = "RET";
 				break;
 			case 0xca:
-				inst = "JZ $" + toHex04((memory[opcode + 2] << 8) + memory[opcode + 1]);
+				inst = "JZ $" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
+				break;
+			case 0xcc:
+				inst = "CZ #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xcd:
-				inst = "CALL $" + toHex04((memory[opcode + 2] << 8) + memory[opcode + 1]);
+				inst = "CALL $" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xce:
 				inst = "ACI #" + toHex02(memory[opcode + 1]);
 				break;
 				
 			/////     0xd0 - 0xdf     /////
-				
+			
+			case 0xd0:
+				inst = "RNC";
+				break;
 			case 0xd1:
 				inst = "POP D";
 				break;
 			case 0xd2:
-				inst = "JNC #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "JNC #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xd3:
 				inst = "OUT #" + toHex02(memory[opcode + 1]);
 				break; // PORT?
+			case 0xd4:
+				inst = "CNC #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
+				break;
 			case 0xd5:
 				inst = "PUSH D";
 				break;
 			case 0xd6:
 				inst = "SUI #" + toHex02(memory[opcode + 1]);
 				break;
+			case 0xd8:
+				inst = "RC";
+				break;
 			case 0xda:
-				inst = "JC #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "JC #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
+				break;
+			case 0xdc:
+				inst = "CC #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xde:
 				inst = "SBI #" + toHex02(memory[opcode + 1]);
 				break;
 				
 			/////     0xe0 - 0xef     /////
-				
+			
+			case 0xe0:
+				inst = "RPO";
+				break;
 			case 0xe1:
 				inst = "POP H";
 				break;
 			case 0xe2:
-				inst = "JPO #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "JPO #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xe4:
-				inst = "CPO $" + toHex04((memory[opcode + 2] << 8) + memory[opcode + 1]);
+				inst = "CPO $" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xe5:
 				inst = "PUSH H";
@@ -1258,23 +1477,35 @@ public class CpuEmulation
 			case 0xe6:
 				inst = "ANI #" + toHex02(memory[opcode + 1]);
 				break;
+			case 0xe8:
+				inst = "RPE";
+				break;
 			case 0xea:
-				inst = "JPE #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "JPE #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xeb:
 				inst = "XCHG";
+				break;
+			case 0xec:
+				inst = "CPE #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xee:
  				inst = "XRI #" + toHex02(memory[opcode + 1]);
 				break;
 				
 			/////     0xf0 - 0xff     /////
-				
+			
+			case 0xf0:
+				inst = "RP";
+				break;
 			case 0xf1:
 				inst = "POP PSW";
 				break;
 			case 0xf2:
-				inst = "JP #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "JP #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
+				break;
+			case 0xf4:
+				inst = "CP #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xf5:
 				inst = "PUSH PSW";
@@ -1282,11 +1513,17 @@ public class CpuEmulation
 			case 0xf6:
 				inst = "ORI #" + toHex02(memory[opcode + 1]);
 				break;
+			case 0xf8:
+				inst = "RM";
+				break;
 			case 0xfa:
-				inst = "JM #$" + toHex02(memory[opcode + 2]) + toHex02(memory[opcode + 1]);
+				inst = "JM #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xfb:
 				inst = "EI (unimplemented)"; // Skipped
+				break;
+			case 0xfc:
+				inst = "CM #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
 			case 0xfe:
  				inst = "CPI #" + toHex02(memory[opcode + 1]);
