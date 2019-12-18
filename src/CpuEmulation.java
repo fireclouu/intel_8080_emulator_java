@@ -241,6 +241,9 @@ public class CpuEmulation
 				case 0x3b:
 					DCX(SP);
 					break; // DCX SP
+				case 0x3c:
+					INR(A);
+					break; // INR A
 				case 0x3d:
 					DCR(A);
 					break; // DCR A
@@ -505,7 +508,55 @@ public class CpuEmulation
 					break; // ADC A
 					
 				//////   0x90 - 0x9f   /////
-					
+				
+				case 0x90:
+					SUB (B.value);
+					break; // SUB B
+				case 0x91:
+					SUB (C.value);
+					break; // SUB C
+				case 0x92:
+					SUB (D.value);
+					break; // SUB D
+				case 0x93:
+					SUB (E.value);
+					break; // SUB E
+				case 0x94:
+					SUB (H.value);
+					break; // SUB H
+				case 0x95:
+					SUB (L.value);
+					break; // SUB L
+				case 0x96:
+					SUB (memory[addr]);
+					break; // SUB M
+				case 0x97:
+					SUB (A.value);
+					break; // SUB A
+				case 0x98:
+					SBB (B.value);
+					break; // SBB B
+				case 0x99:
+					SBB (C.value);
+					break; // SBB C
+				case 0x9a:
+					SBB (D.value);
+					break; // SBB D
+				case 0x9b:
+					SBB (E.value);
+					break; // SBB E
+				case 0x9c:
+					SBB (H.value);
+					break; // SBB H
+				case 0x9d:
+					SBB (L.value);
+					break; // SBB L
+				case 0x9e:
+					SBB (memory[addr]);
+					break; // SBB M
+				case 0x9f:
+					SBB (A.value);
+					break; // SBB A
 				
 				//////   0xa0 - 0xaf   /////
 				
@@ -1027,6 +1078,9 @@ public class CpuEmulation
 			case 0x3b:
 				inst = "DCX SP";
 				break;
+			case 0x3c:
+				inst = "INR A";
+				break;
 			case 0x3d:
 				inst = "DCR A";
 				break;
@@ -1277,6 +1331,57 @@ public class CpuEmulation
 				inst = "ADC A";
 				break;
 				
+			/////     0x90 - 0x9f     /////
+			
+			case 0x90:
+				inst = "SUB B";
+				break;
+			case 0x91:
+				inst = "SUB C";
+				break;
+			case 0x92:
+				inst = "SUB D";
+				break;
+			case 0x93:
+				inst = "SUB E";
+				break;
+			case 0x94:
+				inst = "SUB H";
+				break;
+			case 0x95:
+				inst = "SUB L";
+				break;
+			case 0x96:
+				inst = "SUB M";
+				break;
+			case 0x97:
+				inst = "SUB A";
+				break;
+			case 0x98:
+				inst = "SBB B";
+				break;
+			case 0x99:
+				inst = "SBB C";
+				break;
+			case 0x9a:
+				inst = "SBB D";
+				break;
+			case 0x9b:
+				inst = "SBB E";
+				break;
+			case 0x9c:
+				inst = "SBB H";
+				break;
+			case 0x9d:
+				inst = "SBB L";
+				break;
+			case 0x9e:
+				inst = "SBB M";
+				break;
+			case 0x9f:
+				inst = "SBB A";
+				break;
+			
 			/////     0xa0 - 0xaf     /////
 			
 			case 0xa0:

@@ -5,7 +5,7 @@ import Cpu.*;
 public class Main
 {
 	///   ROM LENGTH   ///
-	public static final int PROGRAM_LENGTH = 0x8_000;
+	public static final int PROGRAM_LENGTH = 0xffff;
 
 	///   SPLIT ROMS LIST   ///
 	static final String[] romName = {
