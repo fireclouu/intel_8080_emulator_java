@@ -816,6 +816,9 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // JPO adr
+				case 0xe3:
+					XTHL();
+					break; // XTHL
 				case 0xe4:
 					if (P.flag == 0) {
 						CALL(opcode);
@@ -835,6 +838,9 @@ public class CpuEmulation
 						RET();
 					}
 					break; // RPE
+				case 0xe9:
+					PC.value = addr;
+					break; // PCHL
 				case 0xea:
 					if (P.flag == 1) {
 						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
@@ -893,6 +899,9 @@ public class CpuEmulation
 						RET();
 					}
 					break; // RM
+				case 0xf9:
+					SPHL(addr);
+					break; // SPHL
 				case 0xfa:
 					if (S.flag == 1) {
 						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
@@ -1613,6 +1622,9 @@ public class CpuEmulation
 			case 0xe2:
 				inst = "JPO #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
+			case 0xe3:
+				inst = "XTHL";
+				break;
 			case 0xe4:
 				inst = "CPO $" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
@@ -1624,6 +1636,9 @@ public class CpuEmulation
 				break;
 			case 0xe8:
 				inst = "RPE";
+				break;
+			case 0xe9:
+				inst = "PCHL";
 				break;
 			case 0xea:
 				inst = "JPE #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
@@ -1661,6 +1676,9 @@ public class CpuEmulation
 			case 0xf8:
 				inst = "RM";
 				break;
+			case 0xf9:
+				inst = "SPHL";
+				break;
 			case 0xfa:
 				inst = "JM #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
@@ -1683,13 +1701,13 @@ public class CpuEmulation
 		System.out.println(
 			"B: " + toHex02(B.value) + " | C: " + toHex02(C.value) + " | D: " + toHex02(D.value) +
 			" | E: " + toHex02(E.value) + " | H: " + toHex02(H.value) + " | L: " + toHex02(L.value) +
-			" | M: " + toHex02(memory[memory[H.value<<8] | memory[L.value]])  + " | A: " + toHex02(A.value));
+			" | M: " + toHex02(memory[memory[H.value << 8] | memory[L.value]])  + " | A: " + toHex02(A.value));
 			
-		System.out.println(
-			"CY: " + CY.flag + " | ZR: " + Z.flag + " | PA: " + P.flag + " | SN: " + S.flag /*+ " | AC: " + AC.flag*/);
-		
+		System.out.println("CY: " + CY.flag + " | ZR: " + Z.flag + " | PA: " + P.flag + " | SN: " + S.flag  + " | AC: " + AC.flag);
 		System.out.println("SP: " + toHex04(SP.value) + " | (" + toHex02(memory[opcode]) + ") | FILE_ADDR: " + toHex04(opcode - this.directAddr) + " | PC: " + toHex04(opcode) + "  " + inst);
-		
+		if (SP.value > 3) {
+			System.out.println("TPS: " + toHex02(memory[SP.value]) + " $" + toHex04(SP.value) + " | BMS: " + toHex02(memory[SP.value + 1]) + " $" + toHex04(SP.value + 1));
+		}
 		System.out.println();
 	}
 	
@@ -1765,8 +1783,8 @@ public class CpuEmulation
 		if (rp.length == 2) {
 			// Register Pair
 			rp[1].value--;
-
-			if ((rp[1].value & 0xff) == 0xff) { // this is an issue since 0 - 1 , in java, will result to -1 instead of 255 or 0xff
+			// 0 - 1 , in java, will result to -1 instead of 255 or 0xff, so it must be ANDed to 0xff
+			if ((rp[1].value & 0xff) == 0xff) { 
 				rp[0].value--;
 			}
 
@@ -1872,17 +1890,17 @@ public class CpuEmulation
 		
 		// prepare variable higher than 0xff, but with 0's in bit 0-7
 		// this way, it serves as flags' default state waiting to be flipped, like a template
-		// also helps to retain its proper position
+		// also helps to retain flags proper positioning
 		int PSW = 0x100;
 		
 		// skip pos 5 and 3, it does not need to be flipped since it is by default, a 0 value
 		PSW =
-			(S.flag 	<<	7)	|	// place sign flag status on pos 7
-			(Z.flag 	<<	6)	|	// place zero flag status on pos 6
-			(AC.flag 	<<	4)	|	// place aux. carry flag status on pos 4
-			(P.flag 	<<	2)	|	// place parity flag status on pos 2
-			(1 			<<	1)	|	// place fixed value "1" on pos 1
-			(CY.flag 		 )	;	// place carry flag status on pos 0
+			(S.flag     <<  7)  |   // place sign flag status on pos 7
+			(Z.flag     <<  6)  |   // place zero flag status on pos 6
+			(AC.flag    <<  4)  |   // place aux. carry flag status on pos 4
+			(P.flag     <<  2)  |   // place parity flag status on pos 2
+			(1          <<  1)  |   // place fixed value "1" on pos 1
+			(CY.flag         )  ;   // place carry flag status on pos 0
 		
 		memory[SP.value - 2] = (PSW & 0xff); // cut to 8 bit after
 		
@@ -1938,6 +1956,10 @@ public class CpuEmulation
 		memory[addr] = L.value;
 	}
 	
+	private void SPHL(int address) {
+		SP.value = address;
+	}
+	
 	private void STA(int hi_nib, int lo_nib) {
 		int addr = (hi_nib << 8) | lo_nib;
 		memory[addr] = A.value;
@@ -1976,6 +1998,19 @@ public class CpuEmulation
 		
 		A.value = res;
 	}
+	
+	private void XTHL() {
+		// SWAP H and Top + 1  SP (under of top stack)
+		H.value = H.value + memory[SP.value + 1];
+		memory[SP.value + 1] = H.value - memory[SP.value + 1];
+		H.value = H.value - memory[SP.value + 1];
+
+		// SWAP L and Top SP (top stack)
+		L.value = L.value + memory[SP.value];
+		memory[SP.value] = L.value - memory[SP.value];
+		L.value = L.value - memory[SP.value];
+	}
+	
 	
 	///  HL SUBROUTINES  ///
 	
@@ -2080,7 +2115,8 @@ public class CpuEmulation
 				}
 				
 				System.out.println();
-			} else if (C.value == 2) {
+			}
+ 		else if (C.value == 2) {
 				System.out.println ("print char routine called\n");
 			}
 			
