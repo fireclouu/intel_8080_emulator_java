@@ -60,7 +60,7 @@ public class CpuEmulation
 			PC.value++;
 			
 			// print instruction
-			PrintComponent.printInstruction(opcode, memory, false);
+			PrintComponent.printInstruction(opcode, memory, true);
 			
 			/*if (PrintComponent.exec_count == 20) {
 				PAUSE_THREAD(MAX_INT);
@@ -919,6 +919,8 @@ public class CpuEmulation
 					break; // JP adr
 					
 				// case 0xf3  // DI special
+				case 0xf3:
+					break; // stub DI
 					
 				case 0xf4:
 					if (S.flag == 0) {
@@ -1159,9 +1161,10 @@ public class CpuEmulation
 		memory[ (SP.value - 1) & 0xffff ] = A.value;
 		
 		// prepare variable higher than 0xff, but with 0's in bit 0-7
+		// add 2 to comply with fixed value on bit pos. 1
 		// this way, it serves as flags' default state waiting to be flipped, like a template
 		// also helps to retain flags proper positioning
-		int PSW = 0x100;
+		int PSW = 0x102;
 		
 		// skip pos 5 and 3, it does not need to be flipped since it is by default, a 0 value
 		PSW =
@@ -1169,7 +1172,6 @@ public class CpuEmulation
 			(Z.flag     <<  6)  |   // place zero flag status on pos 6
 			(AC.flag    <<  4)  |   // place aux. carry flag status on pos 4
 			(P.flag     <<  2)  |   // place parity flag status on pos 2
-			(1          <<  1)  |   // place fixed value "1" on pos 1
 			(CY.flag         )  ;   // place carry flag status on pos 0
 		
 		memory[ (SP.value - 2) & 0xffff ] = (PSW & 0xff); // cut to 8 bit after
