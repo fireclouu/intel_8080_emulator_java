@@ -1,10 +1,11 @@
 public class PrintComponent
 {
+	public static int exec_count = 0;
 	
 	///  PRINT INST.  ///
 	public static void printInstruction(int opcode, int[] memory, boolean printLess) {
 		String inst = null;
-
+		
 		switch(memory[opcode]) {
 
 				// 0x00 - 0x0f
@@ -636,6 +637,9 @@ public class PrintComponent
 			case 0xca:
 				inst = "JZ $" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
+			case 0xcb:
+				inst = " - ";
+				break;
 			case 0xcc:
 				inst = "CZ #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
@@ -677,6 +681,9 @@ public class PrintComponent
 				break;
 			case 0xdc:
 				inst = "CC #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
+				break;
+			case 0xdd:
+				inst = " - ";
 				break;
 			case 0xde:
 				inst = "SBI #" + toHex02(memory[opcode + 1]);
@@ -720,6 +727,9 @@ public class PrintComponent
 			case 0xec:
 				inst = "CPE #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
+			case 0xed:
+				inst = " - ";
+				break;
 			case 0xee:
  				inst = "XRI #" + toHex02(memory[opcode + 1]);
 				break;
@@ -759,6 +769,9 @@ public class PrintComponent
 			case 0xfc:
 				inst = "CM #$" + toHex04((memory[opcode + 2] << 8) | memory[opcode + 1]);
 				break;
+			case 0xfd:
+				inst = " - ";
+				break;
 			case 0xfe:
  				inst = "CPI #" + toHex02(memory[opcode + 1]);
 				break;
@@ -769,8 +782,11 @@ public class PrintComponent
 
 		}
 		if (printLess) {
-			System.out.println(toHex04(CpuEmulation.PC.value) + "  " + inst);
+			System.out.println("FA: " + toHex04(opcode - CpuEmulation.directAddr) + " | PC: " + toHex04(CpuEmulation.PC.value) + "  " + inst);
 		} else {
+			// Cycle
+			exec_count++;
+			
 			// Print registers
 			System.out.println(
 				"B: " + toHex02(CpuEmulation.B.value) + " | C: " + toHex02(CpuEmulation.C.value) + " | D: " + toHex02(CpuEmulation.D.value) +
@@ -782,8 +798,11 @@ public class PrintComponent
 
 			// Print Stack Pointer, Program Counter, Top stack and Bottom stack
 			System.out.println("SP: " + toHex04(CpuEmulation.SP.value) + " | (" + toHex02(memory[opcode]) + ") | FILE_ADDR: " + toHex04(opcode - CpuEmulation.directAddr) + " | PC: " + toHex04(opcode) + "  " + inst);
-			if (CpuEmulation.SP.value > 3) {
+			System.out.print("CYCLE: " + exec_count + " | ");
+			if (CpuEmulation.SP.value != 0) {
 				System.out.println("TPS: " + toHex02(memory[CpuEmulation.SP.value]) + " $" + toHex04(CpuEmulation.SP.value) + " | BMS: " + toHex02(memory[CpuEmulation.SP.value + 1]) + " $" + toHex04(CpuEmulation.SP.value + 1));
+			} else {
+				System.out.println("Stack Pointer at 0");
 			}
 
 			// Print Separator

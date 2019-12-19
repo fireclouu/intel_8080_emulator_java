@@ -27,6 +27,10 @@ public class CpuEmulation
 		PSW_FLAG_POS_AC = 0b_0001_0000, // on bit pos 4 (Aux. carry)
 		PSW_FLAG_POS_ZE = 0b_0100_0000, // on bit pos 6 (Zero)
 		PSW_FLAG_POS_SN = 0b_1000_0000; // on bit pos 7 (Sign)
+		
+		
+	///  MISC  ///
+	final int MAX_INT = 2_147_483_647;
 	
 	public CpuEmulation(int[] rom) {
 		init();
@@ -34,7 +38,7 @@ public class CpuEmulation
 		System.out.println("Start emulator...\n");
 		
 		// TESTING PURPOSES
-		TEST_OVERRIDE();
+		AUTO_TEST();
 		
 		// Start emulation loop
 		emulate8080();
@@ -56,7 +60,11 @@ public class CpuEmulation
 			PC.value++;
 			
 			// print instruction
-			PrintComponent.printInstruction(opcode, memory, true);
+			PrintComponent.printInstruction(opcode, memory, false);
+			
+			/*if (PrintComponent.exec_count == 20) {
+				PAUSE_THREAD(MAX_INT);
+			}*/
 			
 			switch(memory[opcode]) {
 				
@@ -189,7 +197,9 @@ public class CpuEmulation
 					MVI(opcode, H);
 					PC.value++;
 					break; // MVI H, D8
+					
 				// Case 0x27 DAA (BCD)
+				
 				case 0x28:
 					break; // -
 				case 0x29:
@@ -443,6 +453,7 @@ public class CpuEmulation
 					break; // MOV M, L
 				case 0x76:
 					// System.exit(0); // terminate program
+					System.out.println("HLT CALLED!");
 					return; // HLT
 				case 0x77:
 					memory[addr] = A.value;
@@ -710,6 +721,9 @@ public class CpuEmulation
 					ADD(memory[opcode + 1]);
 					PC.value++;
 					break; // ADI D8
+					
+				// case 0xc7  // RST 0
+				
 				case 0xc8:
 					if (Z.flag == 1) {
 						RET();
@@ -725,6 +739,8 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // JZ adr
+				case 0xcb:
+					break; // -
 				case 0xcc:
 					if (Z.flag == 1) {
 						CALL(opcode);
@@ -733,13 +749,15 @@ public class CpuEmulation
 					}
 					break; // CZ adr
 				case 0xcd:
-					//CALL(opcode);
+					// CALL(opcode);
 					TEST_DIAG(opcode);
 					break; // CALL adr
 				case 0xce:
 					ADC(memory[opcode + 1]);
 					PC.value++;
 					break;  // ACI D8
+					
+				// case 0xcf  // RST 1
 					
 				//////   0xd0 - 0xdf   /////
 				
@@ -775,11 +793,16 @@ public class CpuEmulation
 					SUB(memory[opcode + 1]);
 					PC.value++;
 					break; // SUI D8
+					
+				// case 0xd7  // RST 2
+					
 				case 0xd8: 
 					if (CY.flag == 1) {
 						RET();
 					}
 					break; // RC
+				case 0xd9:
+					break; // -
 				case 0xda:
 					if (CY.flag == 1) {
 						PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
@@ -787,6 +810,9 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // JC adr
+					
+				// case 0xdb  // IN D8 (PC + 1) special
+					
 				case 0xdc:
 					if (CY.flag == 1) {
 						CALL(opcode);
@@ -794,10 +820,14 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // CC adr
+				case 0xdd:
+					break; // -
 				case 0xde:
 					SBB(memory[opcode + 1]);
 					PC.value++;
 					break; // SBI D8
+					
+				// case 0xdf  // RST 3
 					
 				//////   0xe0 - 0xef   /////
 				
@@ -833,6 +863,9 @@ public class CpuEmulation
 					ANA(memory[opcode + 1]);
 					PC.value++;
 					break; // ANI D8
+					
+				// case 0xe7 // RST 4
+					
 				case 0xe8: 
 					if (P.flag == 1) {
 						RET();
@@ -858,10 +891,14 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // CPE adr
+				case 0xed:
+					break; // -
 				case 0xee:
 					XRA(memory[opcode + 1]);
 					PC.value++;
 					break; // XRI D8
+					
+				// case 0xef // RST 5
 					
 				//////   0xf0 - 0xff   /////
 				
@@ -880,6 +917,9 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // JP adr
+					
+				// case 0xf3  // DI special
+					
 				case 0xf4:
 					if (S.flag == 0) {
 						CALL(opcode);
@@ -894,6 +934,9 @@ public class CpuEmulation
 					ORA(memory[opcode + 1]);
 					PC.value++;
 					break; // ORI D8
+					
+				// case 0xf7 // RST 6
+					
 				case 0xf8: 
 					if (S.flag == 1) {
 						RET();
@@ -909,9 +952,13 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // JM adr	
+					
+					
 				case 0xfb:
 					// TODO: needs to implement, when interrupts added
-					break; // EI
+					break; // EI (special)
+					
+					
 				case 0xfc:
 					if (S.flag == 1) {
 						CALL(opcode);
@@ -919,11 +966,15 @@ public class CpuEmulation
 						PC.value += 2;
 					}
 					break; // CM adr
+				case 0xfd:
+					break; // -
 				case 0xfe:
 					CMP(memory[opcode + 1]);
 					PC.value++;
 					break; // CPI D8
-
+					
+				// case 0xff // RST 7
+					
 				default:
 					return;
 			}
@@ -954,9 +1005,9 @@ public class CpuEmulation
 	
 	private void CALL(int opcode) {
 		int nextAddr = opcode + 3;
-		memory[SP.value - 1] = ((nextAddr >> 8) & 0xff);
-		memory[SP.value - 2] = (nextAddr & 0xff);
-		SP.value -= 2;
+		memory[ (SP.value - 1) & 0xffff ] = ((nextAddr >> 8) & 0xff);
+		memory[ (SP.value - 2) & 0xffff ] = (nextAddr & 0xff);
+		SP.value = (SP.value - 2) & 0xffff;
 		
 		PC.value = (memory[opcode + 2] << 8) | memory[opcode + 1];
 	}
@@ -1046,10 +1097,8 @@ public class CpuEmulation
 	}
 	
 	private void LHLD(int opcode) {
-		int addr = (memory[opcode + 2] << 8) | memory[opcode + 1];
-		
-		H.value = memory[addr + 1];
-		L.value = memory[addr];
+		H.value = memory[opcode + 2];
+		L.value = memory[opcode + 1];
 	}
 	
 	private void LXI(int opcode, Component... rp) {
@@ -1078,8 +1127,8 @@ public class CpuEmulation
 	
 	private void POP(Component... rp) {
 		rp[1].value = memory[SP.value];
-		rp[0].value = memory[SP.value + 1];
-		SP.value += 2;
+		rp[0].value = memory[ (SP.value + 1) & 0xffff ];
+		SP.value = (SP.value + 2) & 0xffff;
 	}
 	
 	private void POP_PSW() {
@@ -1091,21 +1140,21 @@ public class CpuEmulation
 		Z.flag  = ((PSW & PSW_FLAG_POS_ZE) != 0) ? (byte) 1 : 0;
 		S.flag  = ((PSW & PSW_FLAG_POS_SN) != 0) ? (byte) 1 : 0;
 		
-		A.value = memory[SP.value + 1];
+		A.value = memory[ (SP.value + 1) & 0xffff ];
 
-		SP.value += 2;
+		SP.value = (SP.value + 2) & 0xffff;
 	}
 	
 	private void PUSH(Component... rp) {
-		memory[SP.value - 1] = rp[0].value; // Push rp1 to sp - 1
-		memory[SP.value - 2] = rp[1].value; // Push rp2 to sp - 2
-		SP.value -= 2;
+		memory[(SP.value - 1) & 0xffff] = rp[0].value; // Push rp1 to sp - 1
+		memory[(SP.value - 2) & 0xffff] = rp[1].value; // Push rp2 to sp - 2
+		SP.value = (SP.value - 2) & 0xffff;
 	}
 	
 	private void PUSH_PSW() {
 		// A and PSW (formed binary value via flags , plus its filler value)
 		
-		memory[SP.value - 1] = A.value;
+		memory[ (SP.value - 1) & 0xffff ] = A.value;
 		
 		// prepare variable higher than 0xff, but with 0's in bit 0-7
 		// this way, it serves as flags' default state waiting to be flipped, like a template
@@ -1121,9 +1170,9 @@ public class CpuEmulation
 			(1          <<  1)  |   // place fixed value "1" on pos 1
 			(CY.flag         )  ;   // place carry flag status on pos 0
 		
-		memory[SP.value - 2] = (PSW & 0xff); // cut to 8 bit after
+		memory[ (SP.value - 2) & 0xffff ] = (PSW & 0xff); // cut to 8 bit after
 		
-		SP.value -= 2;
+		SP.value = (SP.value - 2) & 0xffff;
 	}
 	
 	private void RAL() {
@@ -1139,8 +1188,8 @@ public class CpuEmulation
 	}
 	
 	private void RET() {
-		int addr = (memory[SP.value + 1] << 8) | memory[SP.value];
-		SP.value += 2;
+		int addr = (memory[ (SP.value + 1) & 0xffff ] << 8) | memory[SP.value];
+		SP.value = (SP.value + 2) & 0xffff;
 		PC.value = addr;
 	}
 	
@@ -1220,9 +1269,9 @@ public class CpuEmulation
 	
 	private void XTHL() {
 		// SWAP H and Top + 1  SP (under of top stack)
-		H.value = H.value + memory[SP.value + 1];
-		memory[SP.value + 1] = H.value - memory[SP.value + 1];
-		H.value = H.value - memory[SP.value + 1];
+		H.value = H.value + memory[ (SP.value + 1) & 0xffff ];
+		memory[ (SP.value + 1) & 0xffff ] = H.value - memory[ (SP.value + 1) & 0xffff ];
+		H.value = H.value - memory[ (SP.value + 1) & 0xffff ];
 
 		// SWAP L and Top SP (top stack)
 		L.value = L.value + memory[SP.value];
@@ -1298,7 +1347,18 @@ public class CpuEmulation
 	}
 	
 	// CPU OVERRIDE
-	private void TEST_OVERRIDE() {
+	private void AUTO_TEST() {
+		switch (Main.romName[0]) {
+			case "cpudiag.asm":
+				TEST_OVERRIDE_CPUDIAG();
+				break;
+			case "8080EX1.COM":
+				TEST_OVERRIDE_EX1();
+				break;
+		}
+	}
+	
+	private void TEST_OVERRIDE_CPUDIAG() {
 		// Direct PC to loaded address
 		PC.value = this.directAddr;
 		
@@ -1309,6 +1369,10 @@ public class CpuEmulation
 		memory[0x59c] = 0xc3;
 		memory[0x59d] = 0xc2;
 		memory[0x59e] = 0x05;
+	}
+	
+	private void TEST_OVERRIDE_EX1() {
+		PC.value = this.directAddr;
 	}
 	
 	private void TEST_DIAG(int opcode) {
@@ -1326,7 +1390,7 @@ public class CpuEmulation
 				}
 				
 				System.out.println();
-				PAUSE_THREAD();
+				PAUSE_THREAD(1000);
 			}
  		else if (C.value == 2) {
 				System.out.println ("print char routine called\n");
@@ -1337,16 +1401,16 @@ public class CpuEmulation
 			System.out.println("-- System called for exit --");
 		} else {
 			int  ret = PC.value + 2;
-			memory[SP.value - 1] = (ret >> 8) & 0xff;
-			memory[SP.value - 2] = (ret & 0xff);
+			memory[ (SP.value - 1) & 0xffff ] = (ret >> 8) & 0xff;
+			memory[ (SP.value - 2) & 0xffff ] = (ret & 0xff);
 			SP.value=(SP.value - 2) & 0xffff;
 			PC.value= (memory[opcode + 2] << 8) | memory[opcode + 1];
 		}
 	}
 	
-	private void PAUSE_THREAD() {
+	private void PAUSE_THREAD(int mills) {
 		try {
-			Thread.sleep(2_147_483_647);
+			Thread.sleep(mills);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
