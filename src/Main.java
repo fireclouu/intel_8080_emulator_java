@@ -9,28 +9,28 @@ public class Main
 
 	///   SPLIT ROMS LIST   ///
 	static final String[] romName = {
-		/*"invaders.h",
+		"invaders.h",
 		"invaders.g",
 		"invaders.f",
-		"invaders.e"*/
-		"cpudiag.bin"
+		"invaders.e"
+		//"cpudiag.bin"
 	};
 	
 	///   LOAD ADDRESS   ///
 	static final int[] romAddr = {
-		/*0x0000,
+		0x0000,
 		0x0800,
 		0x1000,
-		0x1800*/
-		0x0100
+		0x1800
+		//0x0100
 	};
 	
 	
 	private static CpuEmulation cpu;
 	
-	final static String STORAGE_INTERNAL = "~/src/";
-	// final static String FILE_NAME = "invaders";
-	final static String FILE_NAME = "cpudiag.bin";
+	final static String STORAGE_INTERNAL = "~/src/";	// Change file's path
+	final static String FILE_NAME = "invaders";
+	// final static String FILE_NAME = "cpudiag.bin";
 	
 	// MAIN
 	public static void main(String[] args) {
