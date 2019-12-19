@@ -1097,8 +1097,10 @@ public class CpuEmulation
 	}
 	
 	private void LHLD(int opcode) {
-		H.value = memory[opcode + 2];
-		L.value = memory[opcode + 1];
+		int addr = (memory[opcode + 2] << 8) | memory[opcode + 1];
+		
+		H.value = memory[addr + 1];
+		L.value = memory[addr];
 	}
 	
 	private void LXI(int opcode, Component... rp) {
@@ -1349,7 +1351,7 @@ public class CpuEmulation
 	// CPU OVERRIDE
 	private void AUTO_TEST() {
 		switch (Main.romName[0]) {
-			case "cpudiag.asm":
+			case "cpudiag.bin":
 				TEST_OVERRIDE_CPUDIAG();
 				break;
 			case "8080EX1.COM":
@@ -1390,7 +1392,7 @@ public class CpuEmulation
 				}
 				
 				System.out.println();
-				PAUSE_THREAD(1000);
+				PAUSE_THREAD(MAX_INT);
 			}
  		else if (C.value == 2) {
 				System.out.println ("print char routine called\n");
