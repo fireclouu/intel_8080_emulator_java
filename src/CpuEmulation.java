@@ -1867,28 +1867,24 @@ public class CpuEmulation
 	
 	private void PUSH_PSW() {
 		// A and PSW (formed binary value via flags , plus its filler value)
-
+		
 		memory[SP.value - 1] = A.value;
 		
-		// place carry flag status on pos 0
-		// place fixed value "1" on pos 1
-		// place parity flag status on pos 2
-		// place fixed 0 on pos 3
-		// place aux. carry flag status on pos 4
-		// place fixed 0 on pos 5
-		// place zero flag status on pos 6
-		// place sign flag status on pos 7
-			
-		int PSW = S.flag;
-		PSW = (PSW << 1) | Z.flag;
-		PSW = (PSW << 1);
-		PSW = (PSW << 1) | AC.flag;
-		PSW = (PSW << 1);
-		PSW = (PSW << 1) | P.flag;
-		PSW = (PSW << 1) | 1;
-		PSW = (PSW << 1) | CY.flag;
-			
-		memory[SP.value - 2] = PSW;
+		// prepare variable higher than 0xff, but with 0's in bit 0-7
+		// this way, it serves as flags' default state waiting to be flipped, like a template
+		// also helps to retain its proper position
+		int PSW = 0x100;
+		
+		// skip pos 5 and 3, it does not need to be flipped since it is by default, a 0 value
+		PSW =
+			(S.flag 	<<	7)	|	// place sign flag status on pos 7
+			(Z.flag 	<<	6)	|	// place zero flag status on pos 6
+			(AC.flag 	<<	4)	|	// place aux. carry flag status on pos 4
+			(P.flag 	<<	2)	|	// place parity flag status on pos 2
+			(1 			<<	1)	|	// place fixed value "1" on pos 1
+			(CY.flag 		 )	;	// place carry flag status on pos 0
+		
+		memory[SP.value - 2] = (PSW & 0xff); // cut to 8 bit after
 		
 		SP.value -= 2;
 	}
