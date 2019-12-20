@@ -278,7 +278,7 @@ public class Interpreter
 				cpu.PC += 2;
 				break; // STA adr
 			case 0x33:
-				cpu.memory[addr] = (short) ((cpu.memory[addr] + 1) & 0xffff);
+				cpu.SP = (short) ((cpu.SP + 1) & 0xffff);
 				break; // INX SP
 			case 0x34:
 				res = cpu.memory[addr] + 1;

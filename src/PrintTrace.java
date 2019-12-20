@@ -12,7 +12,6 @@ public class PrintTrace
 	///  PRINT INST.  ///
 	public void printInstruction(int opcode, boolean printLess) {
 		String inst = null;
-		int pc = cpu.PC;
 		
 		switch(cpu.memory[opcode]) {
 
@@ -22,7 +21,7 @@ public class PrintTrace
 				inst = "NOP";
 				break;
 			case 0x01:
-				inst = "LXI B, #" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "LXI B, #" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0x02:
 				inst = "STAX B";
@@ -37,7 +36,7 @@ public class PrintTrace
 				inst = "DCR B";
 				break;
 			case 0x06:
-				inst = "MVI B, #" + toHex02(cpu.memory[pc + 1]);
+				inst = "MVI B, #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0x07:
 				inst = "RLC";
@@ -61,7 +60,7 @@ public class PrintTrace
 				inst = "DCR C";
 				break;
 			case 0x0e:
-				inst = "MVI C, #" + toHex02(cpu.memory[pc + 1]);
+				inst = "MVI C, #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0x0f:
 				inst = "RRC";
@@ -73,7 +72,7 @@ public class PrintTrace
 				inst = " - ";
 				break;
 			case 0x11:
-				inst = "LXI D, #" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "LXI D, #" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0x12:
 				inst = "STAX B";
@@ -88,7 +87,7 @@ public class PrintTrace
 				inst = "DCR D";
 				break;
 			case 0x16:
-				inst = "MVI D, #" + toHex02(cpu.memory[pc + 1]);
+				inst = "MVI D, #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0x17:
 				inst = "RAL";
@@ -112,7 +111,7 @@ public class PrintTrace
 				inst = "DCR E";
 				break;
 			case 0x1e:
-				inst = "MVI E, #" + toHex02(cpu.memory[pc + 1]);
+				inst = "MVI E, #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0x1f:
 				inst = "RAR";
@@ -124,10 +123,10 @@ public class PrintTrace
 				inst = " - ";
 				break;
 			case 0x21:
-				inst = "LXI H, #" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "LXI H, #" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0x22:
-				inst = "SHLD #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "SHLD #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0x23:
 				inst = "INX H";
@@ -139,7 +138,7 @@ public class PrintTrace
 				inst = "DCR H";
 				break;
 			case 0x26:
-				inst = "MVI H, #" + toHex02(cpu.memory[pc + 1]);
+				inst = "MVI H, #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0x28:
 				inst = " - ";
@@ -148,7 +147,7 @@ public class PrintTrace
 				inst = "DAD H";
 				break;
 			case 0x2a:
-				inst = "LHLD #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "LHLD #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0x2b:
 				inst = "DCX H";
@@ -160,7 +159,7 @@ public class PrintTrace
 				inst = "DCR L";
 				break;
 			case 0x2e:
-				inst = "MVI L, #" + toHex02(cpu.memory[pc + 1]);
+				inst = "MVI L, #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0x2f:
 				inst = "CMA";
@@ -169,10 +168,10 @@ public class PrintTrace
 				/////     0x30 - 0x3f     /////
 
 			case 0x31:
-				inst = "LXI SP, #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "LXI SP, #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0x32:
-				inst = "STA #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "STA #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0x33:
 				inst = "INX SP";
@@ -184,7 +183,7 @@ public class PrintTrace
 				inst = "DCR M";
 				break;
 			case 0x36:
-				inst = "MVI M, #" + toHex02(cpu.memory[pc + 1]);
+				inst = "MVI M, #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0x37:
 				inst = "STC";
@@ -196,7 +195,7 @@ public class PrintTrace
 				inst = "DAD SP";
 				break;
 			case 0x3a:
-				inst = "LDA #$" + toHex02(cpu.memory[pc + 2]) + toHex02(cpu.memory[pc + 1]);
+				inst = "LDA #$" + toHex02(cpu.memory[opcode + 2]) + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0x3b:
 				inst = "DCX SP";
@@ -208,7 +207,7 @@ public class PrintTrace
 				inst = "DCR A";
 				break;
 			case 0x3e:
-				inst = "MVI A, #" + toHex02(cpu.memory[pc + 1]);
+				inst = "MVI A, #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0x3f:
 				inst = "CMC";
@@ -622,19 +621,19 @@ public class PrintTrace
 				inst = "POP B";
 				break;
 			case 0xc2:
-				inst = "JNZ $" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "JNZ $" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xc3:
-				inst = "JMP #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "JMP #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xc4:
-				inst = "CNZ #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "CNZ #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xc5:
 				inst = "PUSH B";
 				break;
 			case 0xc6:
-				inst = "ADI #" + toHex02(cpu.memory[pc + 1]);
+				inst = "ADI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0xc8:
 				inst = "RZ";
@@ -643,19 +642,19 @@ public class PrintTrace
 				inst = "RET";
 				break;
 			case 0xca:
-				inst = "JZ $" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "JZ $" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xcb:
 				inst = " - ";
 				break;
 			case 0xcc:
-				inst = "CZ #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "CZ #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xcd:
-				inst = "CALL $" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "CALL $" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xce:
-				inst = "ACI #" + toHex02(cpu.memory[pc + 1]);
+				inst = "ACI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 
 				/////     0xd0 - 0xdf     /////
@@ -667,34 +666,34 @@ public class PrintTrace
 				inst = "POP D";
 				break;
 			case 0xd2:
-				inst = "JNC #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "JNC #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xd3:
-				inst = "OUT #" + toHex02(cpu.memory[pc + 1]);
+				inst = "OUT #" + toHex02(cpu.memory[opcode + 1]);
 				break; // PORT?
 			case 0xd4:
-				inst = "CNC #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "CNC #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xd5:
 				inst = "PUSH D";
 				break;
 			case 0xd6:
-				inst = "SUI #" + toHex02(cpu.memory[pc + 1]);
+				inst = "SUI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0xd8:
 				inst = "RC";
 				break;
 			case 0xda:
-				inst = "JC #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "JC #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xdc:
-				inst = "CC #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "CC #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xdd:
 				inst = " - ";
 				break;
 			case 0xde:
-				inst = "SBI #" + toHex02(cpu.memory[pc + 1]);
+				inst = "SBI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 
 				/////     0xe0 - 0xef     /////
@@ -706,19 +705,19 @@ public class PrintTrace
 				inst = "POP H";
 				break;
 			case 0xe2:
-				inst = "JPO #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "JPO #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xe3:
 				inst = "XTHL";
 				break;
 			case 0xe4:
-				inst = "CPO $" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "CPO $" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xe5:
 				inst = "PUSH H";
 				break;
 			case 0xe6:
-				inst = "ANI #" + toHex02(cpu.memory[pc + 1]);
+				inst = "ANI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0xe8:
 				inst = "RPE";
@@ -727,19 +726,19 @@ public class PrintTrace
 				inst = "PCHL";
 				break;
 			case 0xea:
-				inst = "JPE #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "JPE #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xeb:
 				inst = "XCHG";
 				break;
 			case 0xec:
-				inst = "CPE #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "CPE #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xed:
 				inst = " - ";
 				break;
 			case 0xee:
- 				inst = "XRI #" + toHex02(cpu.memory[pc + 1]);
+ 				inst = "XRI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 
 				/////     0xf0 - 0xff     /////
@@ -751,16 +750,16 @@ public class PrintTrace
 				inst = "POP PSW";
 				break;
 			case 0xf2:
-				inst = "JP #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "JP #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xf4:
-				inst = "CP #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "CP #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xf5:
 				inst = "PUSH PSW";
 				break;
 			case 0xf6:
-				inst = "ORI #" + toHex02(cpu.memory[pc + 1]);
+				inst = "ORI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			case 0xf8:
 				inst = "RM";
@@ -769,28 +768,28 @@ public class PrintTrace
 				inst = "SPHL";
 				break;
 			case 0xfa:
-				inst = "JM #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "JM #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xfb:
 				inst = "EI (unimplemented)"; // Skipped
 				break;
 			case 0xfc:
-				inst = "CM #$" + toHex04((cpu.memory[pc + 2] << 8) | cpu.memory[pc + 1]);
+				inst = "CM #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xfd:
 				inst = " - ";
 				break;
 			case 0xfe:
- 				inst = "CPI #" + toHex02(cpu.memory[pc + 1]);
+ 				inst = "CPI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
 			default:
-				inst = "" + toHex02(cpu.memory[pc]) + " is not implemented!";
+				inst = "" + toHex02(cpu.memory[opcode]) + " is not implemented!";
 				System.out.println(inst);
 				return;
 
 		}
 		if (printLess) {
-			System.out.println("FA: " + toHex04(pc - Interpreter.directAddr) + " | PC: " + toHex04(cpu.PC) + "  " + inst);
+			System.out.println("FA: " + toHex04(opcode - Interpreter.directAddr) + " | PC: " + toHex04(cpu.PC) + "  " + inst);
 		} else {
 			// Cycle
 			exec_count++;
@@ -805,7 +804,7 @@ public class PrintTrace
 			System.out.println("CY: " + cpu.cc.CY + " | ZR: " + cpu.cc.Z + " | PA: " + cpu.cc.P + " | SN: " + cpu.cc.S  + " | AC: " + cpu.cc.AC);
 
 			// Print Stack Pointer, Program Counter, Top stack and Bottom stack
-			System.out.println("SP: " + toHex04(cpu.SP) + " | (" + toHex02(cpu.memory[pc]) + ") | FILE_ADDR: " + toHex04(pc - Interpreter.directAddr) + " | PC: " + toHex04(pc) + "  " + inst);
+			System.out.println("SP: " + toHex04(cpu.SP) + " | (" + toHex02(cpu.memory[opcode]) + ") | FILE_ADDR: " + toHex04(opcode - Interpreter.directAddr) + " | PC: " + toHex04(opcode) + "  " + inst);
 			System.out.print("CYCLE: " + exec_count + " | ");
 			if (cpu.SP != 0) {
 				System.out.println("TPS: " + toHex02(cpu.memory[cpu.SP]) + " $" + toHex04(cpu.SP) + " | BMS: " + toHex02(cpu.memory[cpu.SP + 1]) + " $" + toHex04(cpu.SP + 1));

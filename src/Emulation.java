@@ -26,17 +26,15 @@ public class Emulation
 		boolean done = false;
 		int opcode;
 		
-		while(!done) {
-			
+		while(!done) {		
 			opcode = cpu.PC;
-			
-			interpreter.emulate8080(cpu.PC);
 			
 			// print instruction
 			pTrace.printInstruction(opcode, false);
 			
-			interpreter.PAUSE_THREAD(3000);
+			interpreter.emulate8080(cpu.PC);
 			
+			interpreter.PAUSE_THREAD(000);	
 		}
 	}
 	
