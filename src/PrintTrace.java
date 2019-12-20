@@ -1,5 +1,5 @@
-
 import Cpu.*;
+
 public class PrintTrace
 {
 	public int exec_count = 0;
@@ -803,25 +803,26 @@ public class PrintTrace
 			// Print Flags
 			System.out.println("CY: " + cpu.cc.CY + " | ZR: " + cpu.cc.Z + " | PA: " + cpu.cc.P + " | SN: " + cpu.cc.S  + " | AC: " + cpu.cc.AC);
 
-			// Print Stack Pointer, Program Counter, Top stack and Bottom stack
-			System.out.println("SP: " + toHex04(cpu.SP) + " | (" + toHex02(cpu.memory[opcode]) + ") | FILE_ADDR: " + toHex04(opcode - Interpreter.directAddr) + " | PC: " + toHex04(opcode) + "  " + inst);
-			System.out.print("CYCLE: " + exec_count + " | ");
+			// Print Stack Pointer and its contents (TPS = Top stack; BMS = Bottom stack)
+			System.out.print("SP: " + toHex04(cpu.SP) + " | ");
 			if (cpu.SP != 0) {
 				System.out.println("TPS: " + toHex02(cpu.memory[cpu.SP]) + " $" + toHex04(cpu.SP) + " | BMS: " + toHex02(cpu.memory[cpu.SP + 1]) + " $" + toHex04(cpu.SP + 1));
 			} else {
 				System.out.println("Stack Pointer at 0");
 			}
+			
+			System.out.println("CYCLE: " + exec_count + " | FA: " + toHex04(opcode - Interpreter.directAddr) + " | PC: " + toHex04(opcode) + " (" + toHex02(cpu.memory[opcode]) + ")" + " " + inst);
 
 			// Print Separator
 			System.out.println();
 		}
 	}
 	
-	private String toHex04(int value) {
+	public String toHex04(int value) {
 		return String.format("%04x", value);
 	}
 
-	private String toHex02(int value) {
+	public String toHex02(int value) {
 		return String.format("%02x", value);
 	}
 }
