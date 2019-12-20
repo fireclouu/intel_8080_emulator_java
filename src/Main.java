@@ -1,36 +1,30 @@
 import java.util.*;
 import java.io.*;
-import Cpu.*;
 
 public class Main
 {
 	///   ROM LENGTH   ///
-	public static final int PROGRAM_LENGTH = 0x10_000;
+	public  static final int PROGRAM_LENGTH = 0x10_000;
+	private static final String STORAGE_INTERNAL = "~/src/";	// Change file's path
 
 	///   SPLIT ROMS LIST   ///
 	static final String[] romName = {
-		/*"invaders.h",
+		"invaders.h",
 		"invaders.g",
 		"invaders.f",
-		"invaders.e"*/
-		"cpudiag.bin"
+		"invaders.e"
+		// "cpudiag.bin"
 		// "8080EX1.COM"
 	};
 	
 	///   LOAD ADDRESS   ///
 	static final int[] romAddr = {
-		/*0x0000,
+		0x0000,
 		0x0800,
 		0x1000,
-		0x1800*/
-		0x0100
+		0x1800
+		// 0x0100
 	};
-	
-	private static Emulation emulation;
-	
-	final static String STORAGE_INTERNAL = "~/src/";	// Change file's path
-	// final static String FILE_NAME = "invaders";
-	final static String FILE_NAME = "cpudiag.bin";
 	
 	// MAIN
 	public static void main(String[] args) {
@@ -39,30 +33,22 @@ public class Main
 	
 	// EMULATION
 	public static void startEmulator() {
-		boolean isSplit = true;
-		
-		if(fileExist(isSplit)) {
+		if(fileExist(romName)) {
 			System.out.println("File online!");
 		} else {
 			System.out.println("File could not be found!");
 			return;
 		}
 		
-		emulation = new Emulation(loadRom(isSplit));
-	}
-	
-	// ROM META
-	private static void initRom(String romName) {
-			RomInfo.title = romName;
-			RomInfo.length = PROGRAM_LENGTH;
+		new Emulation(loadRom(romName));
 	}
 	
 	// LOAD ROM
-	private static short[] loadRom(boolean isSplit) {
+	private static short[] loadRom(String... fileName) {
 		// Prepare empty container
 		short[] holder = new short[PROGRAM_LENGTH];
 		
-		if (isSplit) {
+		if (fileName.length >= 2) {
 			
 			for(int i = 0; i < romName.length; i++) {
 				InputStream file = openFile(romName[i]);
@@ -85,7 +71,7 @@ public class Main
 			
 		} else {
 			try {
-				InputStream file = openFile(FILE_NAME);
+				InputStream file = openFile(fileName[0]);
 				short readFile = 0;
 				int counter = 0;
 				
@@ -104,8 +90,8 @@ public class Main
 	}
 	
 	// FILE EXISTENCE CHECK
-	private static boolean fileExist(boolean isSplit) {
-		if(isSplit) {
+	private static boolean fileExist(String... fileName) {
+		if(fileName.length >= 2) {
 			for(int i = 0; i < romName.length; i++) {
 				
 				if (openFile(romName[i]) == null) {
@@ -114,7 +100,7 @@ public class Main
 			}
 		} else {
 			
-			if (openFile(FILE_NAME) == null) {
+			if (openFile(fileName[0]) == null) {
 				return false;
 			}
 		}
@@ -150,3 +136,5 @@ public class Main
 		return size;
 	}
 }
+
+// unified variable names related to file handling

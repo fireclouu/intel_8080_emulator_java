@@ -1,30 +1,23 @@
-import Cpu.*;
 
 public class Interpreter
 {
-	// NOTES
+	/// NOTES
 	/*
-	 - Use objects as parameter for function/subroutine when re-assignment needs to be performed (e.g. *someobject*.value = *somevariable*)
-	 since there's no pointer in java
-	 - strict handling of 0xff (8 bit), 0xffff (16 bit) addresses, java only offers signed data types
-	 */
+		- strict handling of 0xff (8 bit), 0xffff (16 bit) addresses, java only offers signed data types
+	*/
 	 
  	/// CPU
-	public CpuComponents cpu;
+	private CpuComponents cpu;
 	
-	/// OFFSET (use to correctly display memory address of ROMS that is not loaded on 0x0)
-	static int directAddr = Main.romAddr[0];
+	/// OFFSET (use to correctly display memory address of ROMS that is not loaded on array 0)
+	public static int realAddr = Main.romAddr[0];
 	
 	/// CONSTRUCTOR
 	public Interpreter(short memory[], CpuComponents cpu) {
 		init(memory, cpu);
 	}
 	
-	///  MISC  ///
-	final int MAX_INT = 2_147_483_647;
-
-	/////   MAIN EMULATION   /////
-
+	/// MAIN EMULATION
 	public void emulate8080(int pc) {
 		// temporary containers
 		int res;
@@ -1043,8 +1036,8 @@ public class Interpreter
 		}
 	}
 
-	// TODO: verify aux. cary, failing
-	///  SUBROUTINES  ///
+	// TODO: implement aux. carry
+	/// SUBROUTINES
 	private void ADC(int var) {
 		int res = (cpu.A + var) + cpu.cc.CY;
 
@@ -1264,7 +1257,7 @@ public class Interpreter
 		cpu.L = (short) (cpu.L - cpu.memory[cpu.SP]);
 	}
 
-	///  FLAGS  ///
+	/// FLAGS
 	private void flags_BCD(int result) {
 		cpu.cc.CY = (result > 0xff) ? (byte) 1 : 0;
 		cpu.cc.Z = ((result & 0xff) == 0) ? (byte) 1 : 0;
@@ -1286,21 +1279,17 @@ public class Interpreter
 		return (res % 2 == 0) ? (byte) 1 : 0;
 	}
 	
-	///  MACHINE INTERRUPT  ///
-	
-	private void generateInterrupt() {
-		
-	}
-	
+	/// INIT
 	private void init(short memory[], CpuComponents cpu) {
-		// CPU
+		// cpu
 		this.cpu = cpu;
 		
-		// TESTING PURPOSES
+		// testing purposes
 		AUTO_TEST();
 	}
 	
-	///  MISC. METHODS  ///
+	///  MISC  ///
+	private final int MAX_INT = 2_147_483_647;
 	
 	// CPU OVERRIDE
 	private void AUTO_TEST() {
@@ -1316,7 +1305,7 @@ public class Interpreter
 
 	private void TEST_OVERRIDE_CPUDIAG() {
 		// Direct PC to loaded address
-		cpu.PC = this.directAddr;
+		cpu.PC = this.realAddr;
 
 		// SKIP DAA inst
 		cpu.memory[0x59c] = 0xc3;
@@ -1325,7 +1314,7 @@ public class Interpreter
 	}
 
 	private void TEST_OVERRIDE_EX1() {
-		cpu.PC = this.directAddr;
+		cpu.PC = this.realAddr;
 	}
 
 	private void TEST_DIAG(int opcode) {
@@ -1343,7 +1332,7 @@ public class Interpreter
 				}
 
 				System.out.println();
-				PAUSE_THREAD(MAX_INT);
+				PAUSE_THREAD(1000);
 			} else if (cpu.C == 2) {
 				System.out.println("print char routine called\n");
 			}
