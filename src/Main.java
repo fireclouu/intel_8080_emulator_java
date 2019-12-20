@@ -5,40 +5,40 @@ import Cpu.*;
 public class Main
 {
 	///   ROM LENGTH   ///
-	public static final int PROGRAM_LENGTH = 0xffff;
+	public static final int PROGRAM_LENGTH = 0x10_000;
 
 	///   SPLIT ROMS LIST   ///
 	static final String[] romName = {
-		"invaders.h",
+		/*"invaders.h",
 		"invaders.g",
 		"invaders.f",
-		"invaders.e"
-		//"cpudiag.bin"
+		"invaders.e"*/
+		"cpudiag.bin"
+		// "8080EX1.COM"
 	};
 	
 	///   LOAD ADDRESS   ///
 	static final int[] romAddr = {
-		0x0000,
+		/*0x0000,
 		0x0800,
 		0x1000,
-		0x1800
-		//0x0100
+		0x1800*/
+		0x0100
 	};
 	
-	
-	private static CpuEmulation cpu;
+	private static Emulation emulation;
 	
 	final static String STORAGE_INTERNAL = "~/src/";	// Change file's path
-	final static String FILE_NAME = "invaders";
-	// final static String FILE_NAME = "cpudiag.bin";
+	// final static String FILE_NAME = "invaders";
+	final static String FILE_NAME = "cpudiag.bin";
 	
 	// MAIN
 	public static void main(String[] args) {
-		startEmulator(FILE_NAME);
+		startEmulator();
 	}
 	
 	// EMULATION
-	public static void startEmulator(String romName) {
+	public static void startEmulator() {
 		boolean isSplit = true;
 		
 		if(fileExist(isSplit)) {
@@ -48,8 +48,7 @@ public class Main
 			return;
 		}
 		
-		initRom(romName);
-		cpu = new CpuEmulation(loadRom(isSplit));
+		emulation = new Emulation(loadRom(isSplit));
 	}
 	
 	// ROM META
@@ -59,45 +58,45 @@ public class Main
 	}
 	
 	// LOAD ROM
-	private static int[] loadRom(boolean isSplit) {
+	private static short[] loadRom(boolean isSplit) {
 		// Prepare empty container
-		int[] holder = new int[PROGRAM_LENGTH];
+		short[] holder = new short[PROGRAM_LENGTH];
 		
 		if (isSplit) {
 			
 			for(int i = 0; i < romName.length; i++) {
 				InputStream file = openFile(romName[i]);
-				int readFile = 0;
+				short readFile = 0;
 				int currentAddr = romAddr[i];
 			
 				try	{
 					int counter = 0;
 				
-					while ((readFile = file.read()) != -1) {
+					while ((readFile = (short) file.read()) != -1) {
 						holder[currentAddr + counter] = readFile;
 						counter++;
 					}
 				
 				} catch (IOException e) {
 					System.out.println(romAddr[i] + " cannot be read!");
-					return null;
+					return holder;
 				}
 			}
 			
 		} else {
 			try {
 				InputStream file = openFile(FILE_NAME);
-				int readFile = 0;
+				short readFile = 0;
 				int counter = 0;
 				
-				while ((readFile = file.read()) != -1) {
+				while ((readFile = (short) file.read()) != -1) {
 					holder[counter] = readFile;
 					counter++;
 				}
 
 			} catch (IOException e) {
 				System.out.println(romName + " cannot be read!");
-				return null;
+				return holder;
 			}
 		}
 		
