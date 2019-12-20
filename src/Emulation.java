@@ -1,4 +1,3 @@
-import Cpu.*;
 
 public class Emulation
 {
@@ -22,7 +21,7 @@ public class Emulation
 
 	public void startEmulation() {
 
-		// run flag
+		// loop flag
 		boolean done = false;
 		int opcode;
 		
@@ -30,12 +29,15 @@ public class Emulation
 			opcode = cpu.PC;
 			
 			// print instruction
-			pTrace.printInstruction(opcode, false);
+			pTrace.printInstruction(opcode, true);
 			
+			// emulation
 			interpreter.emulate8080(cpu.PC);
-			
-			interpreter.PAUSE_THREAD(000);	
 		}
+	}
+	
+	private void GenerateInterrupt() {
+		
 	}
 	
 	private void init(short memory[]) {

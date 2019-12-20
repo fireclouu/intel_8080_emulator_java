@@ -1,4 +1,3 @@
-import Cpu.*;
 
 public class PrintTrace
 {
@@ -789,7 +788,7 @@ public class PrintTrace
 
 		}
 		if (printLess) {
-			System.out.println("FA: " + toHex04(opcode - Interpreter.directAddr) + " | PC: " + toHex04(cpu.PC) + "  " + inst);
+			System.out.println(toHex04(cpu.PC) + "  " + inst);
 		} else {
 			// Cycle
 			exec_count++;
@@ -811,7 +810,7 @@ public class PrintTrace
 				System.out.println("Stack Pointer at 0");
 			}
 			
-			System.out.println("CYCLE: " + exec_count + " | FA: " + toHex04(opcode - Interpreter.directAddr) + " | PC: " + toHex04(opcode) + " (" + toHex02(cpu.memory[opcode]) + ")" + " " + inst);
+			System.out.println("CYCLE: " + exec_count + " | FA: " + toHex04(opcode - Interpreter.realAddr) + " | PC: " + toHex04(opcode) + " (" + toHex02(cpu.memory[opcode]) + ")" + " " + inst);
 
 			// Print Separator
 			System.out.println();
