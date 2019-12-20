@@ -11,10 +11,7 @@ public class Interpreter
 	 
  	/// CPU
 	public CpuComponents cpu;
-	 
-	/// PRINT INSTRUCTION
-	PrintTrace pTrace;
-	 
+	
 	/// OFFSET (use to correctly display memory address of ROMS that is not loaded on 0x0)
 	static int directAddr = Main.romAddr[0];
 	
@@ -41,9 +38,6 @@ public class Interpreter
 		// increment PC every calls
 		cpu.PC++;
 
-		// print instruction
-		pTrace.printInstruction(false);
-	
 		switch (cpu.memory[pc]) {
 
 				/////   0x00 - 0x0f   /////
@@ -1298,18 +1292,12 @@ public class Interpreter
 		
 	}
 	
-	protected void init(short memory[], CpuComponents cpu) {
-		System.out.println("Start emulator...\n");
-
+	private void init(short memory[], CpuComponents cpu) {
 		// CPU
 		this.cpu = cpu;
 		
-		pTrace = new PrintTrace(this.cpu);
-		
 		// TESTING PURPOSES
 		AUTO_TEST();
-		
-		System.out.println("\nEnd emulator...");
 	}
 	
 	///  MISC. METHODS  ///
@@ -1372,7 +1360,7 @@ public class Interpreter
 		}
 	}
 
-	private void PAUSE_THREAD(int mills) {
+	public void PAUSE_THREAD(int mills) {
 		try {
 			Thread.sleep(mills);
 		} catch (InterruptedException e) {

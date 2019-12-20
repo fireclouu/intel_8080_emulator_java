@@ -10,11 +10,11 @@ public class PrintTrace
 	}
 	
 	///  PRINT INST.  ///
-	public void printInstruction(boolean printLess) {
+	public void printInstruction(int opcode, boolean printLess) {
 		String inst = null;
 		int pc = cpu.PC;
 		
-		switch(cpu.memory[pc]) {
+		switch(cpu.memory[opcode]) {
 
 				// 0x00 - 0x0f
 
