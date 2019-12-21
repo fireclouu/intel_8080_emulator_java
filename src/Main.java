@@ -1,12 +1,13 @@
-import java.util.*;
 import java.io.*;
+import java.util.concurrent.*;
+import java.util.*;
 
 public class Main
 {
 	///   ROM LENGTH   ///
 	public  static final int PROGRAM_LENGTH = 0x10_000;
 	private static final String STORAGE_INTERNAL = "~/src/";	// Change file's path
-
+	
 	///   SPLIT ROMS LIST   ///
 	static final String[] romName = {
 		"invaders.h",
@@ -22,8 +23,8 @@ public class Main
 		0x0000,
 		0x0800,
 		0x1000,
-		0x1800
-		// 0x0100
+		0x1800,
+		//0x0100
 	};
 	
 	// MAIN
@@ -44,11 +45,11 @@ public class Main
 	}
 	
 	// LOAD ROM
-	private static short[] loadRom(String... fileName) {
+	private static short[] loadRom(String[] fileName) {
 		// Prepare empty container
 		short[] holder = new short[PROGRAM_LENGTH];
 		
-		if (fileName.length >= 2) {
+		if (fileName.length > 1) {
 			
 			for(int i = 0; i < romName.length; i++) {
 				InputStream file = openFile(romName[i]);
@@ -76,7 +77,7 @@ public class Main
 				int counter = 0;
 				
 				while ((readFile = (short) file.read()) != -1) {
-					holder[counter] = readFile;
+					holder[romAddr[0] + counter] = readFile;
 					counter++;
 				}
 
@@ -90,8 +91,8 @@ public class Main
 	}
 	
 	// FILE EXISTENCE CHECK
-	private static boolean fileExist(String... fileName) {
-		if(fileName.length >= 2) {
+	private static boolean fileExist(String[] fileName) {
+		if(fileName.length > 1) {
 			for(int i = 0; i < romName.length; i++) {
 				
 				if (openFile(romName[i]) == null) {
@@ -124,7 +125,6 @@ public class Main
 		
 		try
 		{
-	
 			while (file.read() != -1) {
 				size++;
 			}
@@ -136,5 +136,3 @@ public class Main
 		return size;
 	}
 }
-
-// unified variable names related to file handling

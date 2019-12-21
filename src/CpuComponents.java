@@ -3,11 +3,11 @@ public class CpuComponents
 {
 	///  PSW FLAG POSITIONS  ///
 	public final int 
-	PSW_FLAG_POS_CY = 0b_0000_0001, // on bit pos 0 (Carry)
-	PSW_FLAG_POS_PA = 0b_0000_0100, // on bit pos 2 (Parity)
-	PSW_FLAG_POS_AC = 0b_0001_0000, // on bit pos 4 (Aux. carry)
-	PSW_FLAG_POS_ZE = 0b_0100_0000, // on bit pos 6 (Zero)
-	PSW_FLAG_POS_SN = 0b_1000_0000; // on bit pos 7 (Sign)
+		PSW_FLAG_POS_CY = 0b_0000_0001, // on bit pos 0 (Carry)
+		PSW_FLAG_POS_PA = 0b_0000_0100, // on bit pos 2 (Parity)
+		PSW_FLAG_POS_AC = 0b_0001_0000, // on bit pos 4 (Aux. carry)
+		PSW_FLAG_POS_ZE = 0b_0100_0000, // on bit pos 6 (Zero)
+		PSW_FLAG_POS_SN = 0b_1000_0000; // on bit pos 7 (Sign)
 
 	///  REGISTERS  ///
 	public short B, C, D, E, H, L, A;
@@ -21,7 +21,7 @@ public class CpuComponents
 	///  CONDITIONALS  ///
 	public ConditionCodes cc;
 
-	///  ?  ///
+	///  INTERRUPT  ///
 	public short int_enable;
 
 	// RESET / INIT
