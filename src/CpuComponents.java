@@ -22,7 +22,7 @@ public class CpuComponents
 	public ConditionCodes cc;
 
 	///  INTERRUPT  ///
-	public short int_enable;
+	public boolean int_enable;
 
 	// RESET / INIT
 	public CpuComponents(int programLength, short memory[]) {

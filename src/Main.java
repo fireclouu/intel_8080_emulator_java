@@ -11,21 +11,21 @@ public class Main
 	
 	///   SPLIT ROMS LIST   ///
 	static final String[] romName = {
-		/*"invaders.h",
+		"invaders.h",
 		"invaders.g",
 		"invaders.f",
-		"invaders.e"*/
-		"cpudiag.bin"
+		"invaders.e"
+		//"cpudiag.bin"
 		//"8080EX1.COM"
 	};
 	
 	///   LOAD ADDRESS   ///
 	static final int[] romAddr = {
-		/*0x0000,
+		0x0000,
 		0x0800,
 		0x1000,
-		0x1800*/
-		0x0100
+		0x1800
+		//0x0100
 	};
 	
 	// MAIN

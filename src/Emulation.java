@@ -26,13 +26,12 @@ public class Emulation
 		
 		System.out.println("\nEnd emulator...");
 	}
-
+	
+	int counter = 0;
 	public void startEmulation() {
 
 		// loop flag
 		boolean done = false;
-		
-		int opcode;
 		
 		// Run @ 2 MHz
 		while(!done) {	
@@ -40,33 +39,28 @@ public class Emulation
 			// System.nanoTime() = billionth of a sec. (epoch)
 			// nano / 1000 = millionth of a sec
 			
-			now = getusec();	
+			now = System.nanoTime() / 1000;
 			
 			if (lastTime == 0) {
 				lastTime = now;
 			}
 			
 			// measured in microseconds
+			
 			long elapse = now - lastTime;
-			long cycle_needed = 2 * elapse;
-			long cycle = 0; // reset every succeeding usec passed
+			int cycle_needed = (int) (2 * elapse);
+			int cycles = 0; // reset every succeeding usec passed
 			
-			while(cycle_needed > cycle) {
-				opcode = cpu.PC;
-			
+			while(cycle_needed > cycles) {
 				// print instruction
-				pTrace.printInstruction(opcode, true);
+				pTrace.printInstruction(cpu.PC, true);
 			
 				// emulation
-				cycle += interpreter.emulate8080(cpu.PC);
+				cycles += interpreter.emulate8080(cpu.PC);
 			}
-			
 			lastTime = now;
+			
 		}
-	}
-	
-	private long getusec() {
-		return TimeUnit.MICROSECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS);
 	}
 	
 	private void GenerateInterrupt() {

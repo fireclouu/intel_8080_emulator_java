@@ -821,8 +821,8 @@ public class Interpreter
 				cycle = 3;
 				break; // CZ adr
 			case 0xcd:
-				// CALL(opcode);
-				TEST_DIAG(opcode);
+				CALL(opcode);
+				// TEST_DIAG(opcode);
 				cycle = 3;
 				break; // CALL adr
 			case 0xce:
@@ -1385,7 +1385,6 @@ public class Interpreter
 				}
 
 				System.out.println();
-				PAUSE_THREAD(1000);
 			} else if (cpu.C == 2) {
 				System.out.println("print char routine called\n");
 			}
