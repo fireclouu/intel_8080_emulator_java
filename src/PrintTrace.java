@@ -2,14 +2,9 @@
 public class PrintTrace
 {
 	public int exec_count = 0;
-	CpuComponents cpu;
-	
-	public PrintTrace(CpuComponents cpu) {
-		this.cpu = cpu;
-	}
 	
 	///  PRINT INST.  ///
-	public void printInstruction(int opcode, boolean printLess) {
+	public void printInstruction(CpuComponents cpu, int opcode, boolean printLess) {
 		String inst = null;
 		
 		switch(cpu.memory[opcode]) {

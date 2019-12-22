@@ -1,4 +1,3 @@
-
 import java.time.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -52,12 +51,12 @@ public class Emulation
 			
 			while(cycle_needed > cycles) {
 				// print instruction
-				pTrace.printInstruction(cpu.PC, true); // enabling this slows (?) emulation
+			//	pTrace.printInstruction(cpu, cpu.PC, true); // enabling this slows (?) emulation
 			
 				// emulation
-				cycles += interpreter.emulate8080(cpu.PC);
+				cycles += interpreter.emulate8080(this.cpu);
 			}
-			
+		
 			lastTime = now;
 		}
 	}
@@ -66,13 +65,10 @@ public class Emulation
 		long microSec = System.nanoTime(); // static variable!
 		return (long) ((System.currentTimeMillis() * 1e3) + (microSec - (million * (microSec / million))) / 1000);
 	}
-	private void GenerateInterrupt() {
-		
-	}
 	
 	private void init(short memory[]) {
-		cpu = new CpuComponents(Main.PROGRAM_LENGTH, memory);
-		interpreter = new Interpreter(memory, cpu);
-		pTrace = new PrintTrace(this.cpu);
+		cpu = new CpuComponents(memory);
+		interpreter = new Interpreter(cpu);
+		pTrace = new PrintTrace();
 	}
 }

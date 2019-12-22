@@ -25,7 +25,7 @@ public class CpuComponents
 	public boolean int_enable;
 
 	// RESET / INIT
-	public CpuComponents(int programLength, short memory[]) {
+	public CpuComponents(short memory[]) {
 		B = 0;
 		C = 0;
 		D = 0;
@@ -45,7 +45,6 @@ public class CpuComponents
 		cc.CY = 0;
 		cc.AC = 0;
 
-		this.memory = new short[programLength];
 		this.memory = memory;
 
 		// int_enable = 0; ?

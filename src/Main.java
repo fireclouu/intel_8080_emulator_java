@@ -25,7 +25,7 @@ public class Main
 		0x0800,
 		0x1000,
 		0x1800
-		//0x0100
+		// 0x0100
 	};
 	
 	// MAIN
