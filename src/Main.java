@@ -1,6 +1,7 @@
-import java.io.*;
-import java.util.concurrent.*;
-import java.util.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.IOException;
 
 public class Main
 {
@@ -10,21 +11,21 @@ public class Main
 	
 	///   SPLIT ROMS LIST   ///
 	static final String[] romName = {
-		"invaders.h",
+		/*"invaders.h",
 		"invaders.g",
 		"invaders.f",
-		"invaders.e"
-		// "cpudiag.bin"
-		// "8080EX1.COM"
+		"invaders.e"*/
+		"cpudiag.bin"
+		//"8080EX1.COM"
 	};
 	
 	///   LOAD ADDRESS   ///
 	static final int[] romAddr = {
-		0x0000,
+		/*0x0000,
 		0x0800,
 		0x1000,
-		0x1800,
-		//0x0100
+		0x1800*/
+		0x0100
 	};
 	
 	// MAIN
@@ -34,10 +35,7 @@ public class Main
 	
 	// EMULATION
 	public static void startEmulator() {
-		if(fileExist(romName)) {
-			System.out.println("File online!");
-		} else {
-			System.out.println("File could not be found!");
+		if(!fileExist(romName)) {
 			return;
 		}
 		
@@ -92,20 +90,39 @@ public class Main
 	
 	// FILE EXISTENCE CHECK
 	private static boolean fileExist(String[] fileName) {
-		if(fileName.length > 1) {
-			for(int i = 0; i < romName.length; i++) {
+		try {
+			if(fileName.length > 1) {
+				for(int i = 0; i < romName.length; i++) {
 				
-				if (openFile(romName[i]) == null) {
+					if (openFile(romName[i]) == null) {
+						System.out.println("File " + romName[i] + " could not be found.");
+						return false;
+					}
+				}
+			} else {
+			
+				if (openFile(fileName[0]) == null) {
+					System.out.println("No files specified..");
 					return false;
 				}
 			}
-		} else {
 			
-			if (openFile(fileName[0]) == null) {
-				return false;
-			}
+		} catch (ArrayIndexOutOfBoundsException e) {
+			System.out.println("No files specified.");
+			return false;
 		}
 		
+		if (romAddr.length == 0) {
+			System.out.println("File online, but no starting memory address specified.");
+			return false;
+		}
+		
+		if (romAddr.length != romName.length) {
+			System.out.println("File online, but roms and memory address unaligned.");
+			return false;
+		}
+		
+		System.out.println("File online , loaded successfully!");
 		return true;
 	}
 	

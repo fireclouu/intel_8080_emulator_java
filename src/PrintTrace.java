@@ -634,6 +634,9 @@ public class PrintTrace
 			case 0xc6:
 				inst = "ADI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
+			case 0xc7:
+				inst = "RST 0";
+				break;
 			case 0xc8:
 				inst = "RZ";
 				break;
@@ -655,7 +658,9 @@ public class PrintTrace
 			case 0xce:
 				inst = "ACI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
-
+			case 0xcf:
+				inst = "RST 1";
+				break;
 				/////     0xd0 - 0xdf     /////
 
 			case 0xd0:
@@ -679,6 +684,9 @@ public class PrintTrace
 			case 0xd6:
 				inst = "SUI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
+			case 0xd7:
+				inst = "RST 2";
+				break;
 			case 0xd8:
 				inst = "RC";
 				break;
@@ -694,7 +702,9 @@ public class PrintTrace
 			case 0xde:
 				inst = "SBI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
-
+			case 0xdf:
+				inst = "RST 3";
+				break;
 				/////     0xe0 - 0xef     /////
 
 			case 0xe0:
@@ -718,6 +728,9 @@ public class PrintTrace
 			case 0xe6:
 				inst = "ANI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
+			case 0xe7:
+				inst = "RST 4";
+				break;
 			case 0xe8:
 				inst = "RPE";
 				break;
@@ -739,7 +752,9 @@ public class PrintTrace
 			case 0xee:
  				inst = "XRI #" + toHex02(cpu.memory[opcode + 1]);
 				break;
-
+			case 0xef:
+				inst = "RST 5";
+				break;
 				/////     0xf0 - 0xff     /////
 
 			case 0xf0:
@@ -751,6 +766,9 @@ public class PrintTrace
 			case 0xf2:
 				inst = "JP #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
+			case 0xf3:
+				inst = "DI";
+				break;
 			case 0xf4:
 				inst = "CP #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
@@ -759,6 +777,9 @@ public class PrintTrace
 				break;
 			case 0xf6:
 				inst = "ORI #" + toHex02(cpu.memory[opcode + 1]);
+				break;
+			case 0xf7:
+				inst = "RST 6";
 				break;
 			case 0xf8:
 				inst = "RM";
@@ -770,7 +791,7 @@ public class PrintTrace
 				inst = "JM #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xfb:
-				inst = "EI (unimplemented)"; // Skipped
+				inst = "EI";
 				break;
 			case 0xfc:
 				inst = "CM #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
@@ -780,6 +801,9 @@ public class PrintTrace
 				break;
 			case 0xfe:
  				inst = "CPI #" + toHex02(cpu.memory[opcode + 1]);
+				break;
+			case 0xff:
+				inst = "RST 7";
 				break;
 			default:
 				inst = "" + toHex02(cpu.memory[opcode]) + " is not implemented!";

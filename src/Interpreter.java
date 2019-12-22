@@ -792,7 +792,7 @@ public class Interpreter
 				break; // ADI D8
 			case 0xc7:
 				CALL(0x00);
-				cycle = 3;
+				cycle = 1;
 				break; // RST 0
 			case 0xc8:
 				if (cpu.cc.Z == 1) {
@@ -832,7 +832,7 @@ public class Interpreter
 				break;  // ACI D8
 			case 0xcf:
 				CALL(0x08);
-				cycle = 3;
+				cycle = 1;
 				break; // RST 1
 
 				//////   0xd0 - 0xdf   /////
@@ -879,7 +879,7 @@ public class Interpreter
 				break; // SUI D8
 			case 0xd7:
 				CALL(0x10);
-				cycle = 3;
+				cycle = 1;
 				break;// RST 2
 			case 0xd8: 
 				if (cpu.cc.CY == 1) {
@@ -916,7 +916,7 @@ public class Interpreter
 				break; // SBI D8
 			case 0xdf:
 				CALL(0x18);
-				cycle = 3;
+				cycle = 1;
 				break;// RST 3
 
 				//////   0xe0 - 0xef   /////
@@ -962,7 +962,7 @@ public class Interpreter
 				break; // ANI D8
 			case 0xe7:
 				CALL(0x20);
-				cycle = 3;
+				cycle = 1;
 				break;// RST 4
 			case 0xe8: 
 				if (cpu.cc.P == 1) {
@@ -1000,7 +1000,7 @@ public class Interpreter
 				break; // XRI D8
 			case 0xef:
 				CALL(0x28);
-				cycle = 3;
+				cycle = 1;
 				break; // RST 5
 		
 				//////   0xf0 - 0xff   /////
@@ -1021,11 +1021,9 @@ public class Interpreter
 				}
 				cycle = 3;
 				break; // JP adr
-
-				// case 0xf3  // DI special
 			case 0xf3:
-				break; // stub DI
-
+				cpu.int_enable = false;
+				break; // DI
 			case 0xf4:
 				if (cpu.cc.S == 0) {
 					CALL(opcode);
@@ -1044,7 +1042,7 @@ public class Interpreter
 				break; // ORI D8
 			case 0xf7:
 				CALL(0x30);
-				cycle = 3;
+				cycle = 1;
 				break;// RST 6
 			case 0xf8: 
 				if (cpu.cc.S == 1) {
@@ -1062,13 +1060,9 @@ public class Interpreter
 				}
 				cycle = 3;
 				break; // JM adr	
-
-
 			case 0xfb:
-				// TODO: needs to implement, when interrupts added
-				break; // EI (special)
-
-
+				cpu.int_enable = true;
+				break; // EI
 			case 0xfc:
 				if (cpu.cc.S == 1) {
 					CALL(opcode);
@@ -1086,7 +1080,7 @@ public class Interpreter
 				break; // CPI D8
 			case 0xff:
 				CALL(0x38);
-				cycle = 3;
+				cycle = 1;
 				break;// RST 7
 			default:
 				return -1;
