@@ -668,7 +668,7 @@ public class PrintTrace
 				inst = "JNC #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
 			case 0xd3:
-				inst = "OUT #" + toHex02(cpu.memory[opcode + 1]);
+				inst = "OUT #" + toHex02(cpu.memory[opcode + 1]) + " (stub)";
 				break; // PORT?
 			case 0xd4:
 				inst = "CNC #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
@@ -688,6 +688,9 @@ public class PrintTrace
 			case 0xda:
 				inst = "JC #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
+			case 0xdb:
+				inst = "IN I/O (stub)";
+				break;
 			case 0xdc:
 				inst = "CC #$" + toHex04((cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1]);
 				break;
@@ -700,6 +703,7 @@ public class PrintTrace
 			case 0xdf:
 				inst = "RST 3";
 				break;
+				
 				/////     0xe0 - 0xef     /////
 
 			case 0xe0:

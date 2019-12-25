@@ -15,8 +15,8 @@ public class Main
 		"invaders.g",
 		"invaders.f",
 		"invaders.e"
-		//"cpudiag.bin"
-		//"8080EX1.COM"
+		// "cpudiag.bin"
+		// "8080EX1.COM"
 	};
 	
 	///   LOAD ADDRESS   ///
@@ -25,7 +25,7 @@ public class Main
 		0x0800,
 		0x1000,
 		0x1800
-		// 0x0100
+		//0x0100
 	};
 	
 	// MAIN

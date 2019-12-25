@@ -7,10 +7,12 @@ public class Emulation
 	///  DECLARE CPU COMPONENTS  ///
 	public CpuComponents cpu;
 	
-	///  TIMER  ///
-	long now = 0; // init
-	long lastTime = 0; // init
+	///  TIMER and INTERRUPT  ///
+	long timerNow = 0; // init
+	long timerLastRecord = 0; // init
 	long million = 1_000_000; // microsec template
+	byte whichInterrupt;
+	long nextInterrupt;
 	
 	/// PRINT INSTRUCTION
 	PrintTrace pTrace;
@@ -37,27 +39,40 @@ public class Emulation
 		while(!done) {	
 			// 2MHz = execute every 5e-7 secs
 			// System.nanoTime() = billionth of a sec. (epoch)
-			now = getMicroSec();
+			timerNow = getMicroSec();
 			
-			if (lastTime == 0) {
-				lastTime = now;
+			if (timerLastRecord == 0) {
+				timerLastRecord = timerNow;
+				nextInterrupt = timerLastRecord + 16_000;
+				whichInterrupt = 1;
+			}
+			
+			if (cpu.int_enable && (timerNow > nextInterrupt)){
+				if (whichInterrupt == 1) {
+					interpreter.GenerateInterrupt(cpu, (byte) 1);
+					whichInterrupt = 2;
+				} else {
+					interpreter.GenerateInterrupt(cpu, (byte) 2);
+					whichInterrupt = 1;
+				}
+				
+				nextInterrupt = (long) (timerNow + 8000.0);
 			}
 			
 			// measured in microseconds
-			long elapse = now - lastTime;
-			int cycle_needed = (int) (2 * elapse);
+			long elapse = timerNow - timerLastRecord;
+			long cycle_needed = (elapse * 2);
 			
 			int cycles = 0; // reset every succeeding usec passed
 			
-			while(cycle_needed > cycles) {
+			/// while((cycles < cycle_needed)) {
 				// print instruction
-			//	pTrace.printInstruction(cpu, cpu.PC, true); // enabling this slows (?) emulation
-			
+				pTrace.printInstruction(cpu, cpu.PC, true); // enabling this slows (?) emulation
+				
 				// emulation
-				cycles += interpreter.emulate8080(this.cpu);
-			}
-		
-			lastTime = now;
+				cycles += interpreter.emulate8080(cpu);
+			//}
+			timerLastRecord = timerNow;
 		}
 	}
 	

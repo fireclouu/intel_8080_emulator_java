@@ -893,9 +893,9 @@ public class Interpreter
 				}
 				cycle = 3;
 				break; // JC adr
-
-				// case 0xdb  // IN D8 (PC + 1) special
-
+			case 0xdb:
+				cpu.PC++;
+				break; // IN D8 (stub) (Load I/O to Accumulator)
 			case 0xdc:
 				if (cpu.cc.CY == 1) {
 					CALL(cpu, opcode);
@@ -1088,9 +1088,15 @@ public class Interpreter
 
 	// TODO: implement aux. carry
 	
-	/// FEATS
-	private void GenerateInterrupt(CpuComponents cpu, byte interrupt_num) {
-		CALL(cpu, 8 * interrupt_num);
+	/// INTERRUPT
+	public void GenerateInterrupt(CpuComponents cpu, byte interrupt_num) {
+		// PUSH PC
+		cpu.memory[(cpu.SP - 1) & 0xffff] = (short) ((cpu.PC & 0xff00) >> 8);
+		cpu.memory[(cpu.SP - 2) & 0xffff] = (short) (cpu.PC & 0xff);
+		cpu.SP = (cpu.SP - 2) & 0xffff;
+		
+		cpu.PC = 8 * interrupt_num;
+		cpu.int_enable = false;
 	}
 	
 	/// SUBROUTINES
