@@ -1,8 +1,6 @@
 
 public class PrintTrace
 {
-	public int exec_count = 0;
-	
 	///  PRINT INST.  ///
 	public void printInstruction(CpuComponents cpu, int opcode, boolean printLess) {
 		String inst = null;
@@ -133,6 +131,9 @@ public class PrintTrace
 				break;
 			case 0x26:
 				inst = "MVI H, #" + toHex02(cpu.memory[opcode + 1]);
+				break;
+			case 0x27:
+				inst = "DAA";
 				break;
 			case 0x28:
 				inst = " - ";
@@ -813,27 +814,31 @@ public class PrintTrace
 		if (printLess) {
 			System.out.println(toHex04(cpu.PC) + "  " + inst);
 		} else {
-			// Cycle
-			exec_count++;
+			
+			// PSW (Flags)
+			int PSW = 0x102;
+
+			// skip pos 5 and 3, it does not need to be flipped since it is by default, a 0 value
+			PSW =
+				(cpu.cc.S     <<  7)  |   // place sign flag status on pos 7
+				(cpu.cc.Z     <<  6)  |   // place zero flag status on pos 6
+				(cpu.cc.AC    <<  4)  |   // place aux. carry flag status on pos 4
+				(cpu.cc.P     <<  2)  |   // place parity flag status on pos 2
+				(1            <<  1)  |
+				(cpu.cc.CY    << 0 )  ;   // place carry flag status on pos 0
+			
 			
 			// Print registers
 			System.out.println(
-				"B: " + toHex02(cpu.B) + " | C: " + toHex02(cpu.C) + " | D: " + toHex02(cpu.D) +
-				" | E: " + toHex02(cpu.E) + " | H: " + toHex02(cpu.H) + " | L: " + toHex02(cpu.L) +
-				" | M: " + toHex02(cpu.memory[cpu.memory[cpu.H << 8] | cpu.memory[cpu.L]])  + " | A: " + toHex02(cpu.A));
+				"AF: " + toHex04((cpu.A << 8) | PSW) + " | BC: " + toHex04((cpu.B << 8) | cpu.C) + " | DE: " + toHex04((cpu.D << 8) | cpu.E) + " | HL: " + toHex04((cpu.H << 8) | cpu.L) +
+				" | SP: " + toHex04(cpu.SP));
 
 			// Print Flags
 			System.out.println("CY: " + cpu.cc.CY + " | ZR: " + cpu.cc.Z + " | PA: " + cpu.cc.P + " | SN: " + cpu.cc.S  + " | AC: " + cpu.cc.AC);
 
-			// Print Stack Pointer and its contents (TPS = Top stack; BMS = Bottom stack)
-			System.out.print("SP: " + toHex04(cpu.SP) + " | ");
-			if (cpu.SP != 0) {
-				System.out.println("TPS: " + toHex02(cpu.memory[cpu.SP]) + " $" + toHex04(cpu.SP) + " | BMS: " + toHex02(cpu.memory[cpu.SP + 1]) + " $" + toHex04(cpu.SP + 1));
-			} else {
-				System.out.println("Stack Pointer at 0");
-			}
+			// Print Stack Pointer
 			
-			System.out.println("CYCLE: " + exec_count + " | FA: " + toHex04(opcode - Interpreter.realAddr) + " | PC: " + toHex04(opcode) + " (" + toHex02(cpu.memory[opcode]) + ")" + " " + inst);
+			System.out.println("PC: " + toHex04(opcode) + " (" + toHex02(cpu.memory[opcode]) + ")" + " " + inst + " | CYCLE: " + Interpreter.cycle);
 
 			// Print Separator
 			System.out.println();
