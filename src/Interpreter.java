@@ -9,8 +9,6 @@ public class Interpreter
 	
 	static boolean test_finished;
 	static long cycle = 0;
-	/// OFFSET (use to correctly display memory address of ROMS that is not loaded on array 0)
-	public static int realAddr = Main.romAddr[0];
 	
 	/// CONSTRUCTOR
 	public Interpreter(CpuComponents cpu) {
@@ -19,7 +17,7 @@ public class Interpreter
 	
 	// SOURCES: superzazu
 	static short OPCODES_CYCLES[] = {
-//  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+	//  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
 		4,  10, 7,  5,  5,  5,  7,  4,  4,  10, 7,  5,  5,  5,  7,  4,  // 0
 		4,  10, 7,  5,  5,  5,  7,  4,  4,  10, 7,  5,  5,  5,  7,  4,  // 1
 		4,  10, 16, 5,  5,  5,  7,  4,  4,  10, 16, 5,  5,  5,  7,  4,  // 2
@@ -768,21 +766,13 @@ public class Interpreter
 				cpu.SP = (cpu.SP + 2) & 0xffff;
 				break; // POP B
 			case 0xc2:
-				if (cpu.cc.Z == 0) {
-					cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_jmp(cpu, opcode, cpu.cc.Z == 0);
 				break; // JNZ adr
 			case 0xc3:
-				cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
+				JMP(cpu, opcode);
 				break; // JMP adr
 			case 0xc4:
-				if (cpu.cc.Z == 0) {
-					CALL(cpu, opcode);
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_call(cpu, opcode, cpu.cc.Z == 0);
 				break; // CNZ adr
 			case 0xc5:
 				cpu.memory[(cpu.SP - 1) & 0xffff] = cpu.B;
@@ -805,20 +795,12 @@ public class Interpreter
 				RET(cpu);
 				break; // RET
 			case 0xca:
-				if (cpu.cc.Z == 1) {
-					cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_jmp(cpu, opcode, cpu.cc.Z == 1);
 				break; // JZ adr
 			case 0xcb:
 				break; // -
 			case 0xcc:
-				if (cpu.cc.Z == 1) {
-					CALL(cpu, opcode);
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_call(cpu, opcode, cpu.cc.Z == 1);
 				break; // CZ adr
 			case 0xcd:
 				CALL(cpu, opcode);
@@ -844,22 +826,14 @@ public class Interpreter
 				cpu.SP = (cpu.SP + 2) & 0xffff;
 				break; // POP D
 			case 0xd2:
-				if (cpu.cc.CY == 0) {
-					cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_jmp(cpu, opcode, cpu.cc.CY == 0);
 				break; // JNC adr
 			case 0xd3:
-				port_out();
+				if (ProgramUtils.Machine.DEBUG) port_out();
 				cpu.PC++;
 				break; // OUT D8
 			case 0xd4:
-				if (cpu.cc.CY == 0) {
-					CALL(cpu, opcode);
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_call(cpu, opcode, cpu.cc.CY == 0);
 				break; // CNC adr
 			case 0xd5:
 				cpu.memory[(cpu.SP - 1) & 0xffff] = cpu.D;
@@ -881,22 +855,14 @@ public class Interpreter
 			case 0xd9:
 				break; // -
 			case 0xda:
-				if (cpu.cc.CY == 1) {
-					cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_jmp(cpu, opcode, cpu.cc.CY == 1);
 				break; // JC adr
 			case 0xdb:
-				cpu.A = port_in(cpu);
+				if (ProgramUtils.Machine.DEBUG) cpu.A = port_in(cpu);
 				cpu.PC++;
 				break; // IN D8 (stub) (Load I/O to Accumulator)
 			case 0xdc:
-				if (cpu.cc.CY == 1) {
-					CALL(cpu, opcode);
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_call(cpu, opcode, cpu.cc.CY == 1);
 				break; // CC adr
 			case 0xdd:
 				break; // -
@@ -921,21 +887,13 @@ public class Interpreter
 				cpu.SP = (cpu.SP + 2) & 0xffff;
 				break; // POP H
 			case 0xe2:
-				if (cpu.cc.P == 0) {
-					cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_jmp(cpu, opcode, cpu.cc.P == 0);
 				break; // JPO adr
 			case 0xe3:
 				XTHL(cpu);
 				break; // XTHL
 			case 0xe4:
-				if (cpu.cc.P == 0) {
-					CALL(cpu, opcode);
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_call(cpu, opcode, cpu.cc.P == 0);
 				break; // CPO adr
 			case 0xe5:
 				cpu.memory[(cpu.SP - 1) & 0xffff] = cpu.H;
@@ -958,21 +916,13 @@ public class Interpreter
 				cpu.PC = addr;
 				break; // PCHL
 			case 0xea:
-				if (cpu.cc.P == 1) {
-					cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_jmp(cpu, opcode, cpu.cc.P == 1);
 				break; // JPE adr
 			case 0xeb:
 				XCHG(cpu);
 				break; // XCHG (HL to DE vice-versa)
 			case 0xec:
-				if (cpu.cc.P == 1) {
-					CALL(cpu, opcode);
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_call(cpu, opcode, cpu.cc.P == 1);
 				break; // CPE adr
 			case 0xed:
 				break; // -
@@ -995,21 +945,13 @@ public class Interpreter
 				POP_PSW(cpu);
 				break; // POP PSW
 			case 0xf2:
-				if (cpu.cc.S == 0) {
-					cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_jmp(cpu, opcode, cpu.cc.S == 0);
 				break; // JP adr
 			case 0xf3:
 				cpu.int_enable = false;
 				break; // DI
 			case 0xf4:
-				if (cpu.cc.S == 0) {
-					CALL(cpu, opcode);
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_call(cpu, opcode, cpu.cc.S == 0);
 				break; // CP adr
 			case 0xf5:
 				PUSH_PSW(cpu);
@@ -1020,7 +962,7 @@ public class Interpreter
 				break; // ORI D8
 			case 0xf7:
 				CALL(cpu, 0x30);
-				break;// RST 6
+				break; // RST 6
 			case 0xf8: 
 				if (cpu.cc.S == 1) {
 					RET(cpu);
@@ -1030,21 +972,13 @@ public class Interpreter
 				SPHL(cpu, addr);
 				break; // SPHL
 			case 0xfa:
-				if (cpu.cc.S == 1) {
-					cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_jmp(cpu, opcode, cpu.cc.S == 1);
 				break; // JM adr	
 			case 0xfb:
 				cpu.int_enable = true;
 				break; // EI
 			case 0xfc:
-				if (cpu.cc.S == 1) {
-					CALL(cpu, opcode);
-				} else {
-					cpu.PC += 2;
-				}
+				i8080_cond_call(cpu, opcode, cpu.cc.S == 1);
 				break; // CM adr
 			case 0xfd:
 				break; // -
@@ -1053,10 +987,8 @@ public class Interpreter
 				cpu.PC++;
 				break; // CPI D8
 			case 0xff:
-				CALL(cpu, 0x38);
+				GenerateInterrupt(cpu, 0x38);
 				break;// RST 7
-			default:
-				return -1;
 		}
 
 		return OPCODES_CYCLES[cpu.memory[opcode]];
@@ -1065,7 +997,7 @@ public class Interpreter
 	// TODO: implement aux. carry
 	
 	/// INTERRUPT
-	public void GenerateInterrupt(CpuComponents cpu, byte interrupt_num) {
+	public void GenerateInterrupt(CpuComponents cpu, int interrupt_num) {
 		// PUSH PC
 		cpu.memory[(cpu.SP - 1) & 0xffff] = (short) ((cpu.PC & 0xff00) >> 8);
 		cpu.memory[(cpu.SP - 2) & 0xffff] = (short) (cpu.PC & 0xff);
@@ -1076,6 +1008,22 @@ public class Interpreter
 	}
 	
 	/// SUBROUTINES
+	private void i8080_cond_call(CpuComponents cpu, int opcode, boolean cond) {
+		if (cond) {
+			CALL(cpu, opcode);
+		} else {
+			cpu.PC += 2;
+		}
+	}
+	
+	private void i8080_cond_jmp(CpuComponents cpu, int opcode, boolean cond) {
+		if (cond) {
+			JMP(cpu, opcode);
+		} else {
+			cpu.PC += 2;
+		}
+	}
+
 	private void ADC(CpuComponents cpu, int var) {
 		int res = (cpu.A + var) + cpu.cc.CY;
 
@@ -1102,7 +1050,7 @@ public class Interpreter
 		cpu.memory[(cpu.SP - 2) & 0xffff] = (short) (nextAddr & 0xff);
 		cpu.SP = (cpu.SP - 2) & 0xffff;
 
-		cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
+		JMP(cpu, opcode);
 	}
 
 	private void CMP(CpuComponents cpu, int var) {
@@ -1134,6 +1082,10 @@ public class Interpreter
 		cpu.L = (short) (res & 0xff);			// store lower  8-bit to L
 	}
 
+	private void JMP(CpuComponents cpu, int opcode) {
+		cpu.PC = (cpu.memory[opcode + 2] << 8) | cpu.memory[opcode + 1];
+	}
+	
 	private void LDA(CpuComponents cpu, int hi_nib, int lo_nib) {
 		int addr = (hi_nib << 8) | lo_nib;
 		cpu.A = cpu.memory[addr];
@@ -1211,13 +1163,13 @@ public class Interpreter
 	}
 
 	private void RLC(CpuComponents cpu) {
-		cpu.cc.CY = (byte) (cpu.A >> 7);
-		cpu.A = (short) (((cpu.A << 1) | cpu.cc.CY) & 0xff);
+		cpu.cc.CY = (byte) (cpu.A >> 7); // get bit 7 as carry
+		cpu.A = (short) (((cpu.A << 1) | cpu.cc.CY) & 0xff); // rotate to left, wrapping its content
 	}
 
 	private void RRC(CpuComponents cpu) {
-		cpu.cc.CY = (byte) (cpu.A & 1);
-		cpu.A = (short) ((cpu.A >> 1) | (cpu.cc.CY << 7) & 0xff);
+		cpu.cc.CY = (byte) (cpu.A & 1); // get bit 0 as carry
+		cpu.A = (short) ((cpu.A >> 1) | (cpu.cc.CY << 7) & 0xff); // rotate to right, wrapping its contents by placing bit 0 to bit 7
 	}
 
 	private void SBB(CpuComponents cpu, int var) {
@@ -1322,17 +1274,14 @@ public class Interpreter
 		AUTO_TEST(cpu);
 	}
 	
-	///  MISC  ///
-	private final int MAX_INT = 2_147_483_647;
-	
-	
 	/// FIX
 	
 	// CPU OVERRIDE
 	private void AUTO_TEST(CpuComponents cpu) {
-		switch (Main.romName[0]) {
+		switch (ProgramUtils.Rom.FILE_NAME[0]) {
 			case "cpudiag.bin":
 				TEST_OVERRIDE_CPUDIAG(cpu);
+				if (!ProgramUtils.Machine.DEBUG) System.out.println("debug is off!");
 				System.out.println("CPU EXERCISER");
 				PAUSE_THREAD(1000);
 				break;
@@ -1342,11 +1291,13 @@ public class Interpreter
 			case "8080EXM.COM":
 			case "8080PRE.COM":
 				TEST_OVERRIDE_GENERIC(cpu);
+				if (!ProgramUtils.Machine.DEBUG) System.out.println("debug is off!");
 				System.out.println("CPU EXERCISER");
 				PAUSE_THREAD(1000);
 				break;
 			case "TST8080.COM":
 				TEST_TST(cpu);
+				if (!ProgramUtils.Machine.DEBUG) System.out.println("debug is off!");
 				break;
 		}
 	}
@@ -1364,7 +1315,7 @@ public class Interpreter
 	
 	private void TEST_OVERRIDE_CPUDIAG(CpuComponents cpu) {
 		// Direct PC to loaded address
-		cpu.PC = this.realAddr;
+		cpu.PC = ProgramUtils.Rom.ROM_ADDRESS[0];
 
 		// SKIP DAA inst
 		cpu.memory[0x59c] = 0xc3;
@@ -1375,7 +1326,7 @@ public class Interpreter
 	}
 
 	private void TEST_OVERRIDE_GENERIC(CpuComponents cpu) {
-		cpu.PC = this.realAddr;
+		cpu.PC = ProgramUtils.Rom.ROM_ADDRESS[0];
 	}
 	
 	private short port_in(CpuComponents cpu) {
@@ -1390,8 +1341,6 @@ public class Interpreter
 				System.out.printf("%c", cpu.memory[addr++]);
 			} while (cpu.memory[addr] != '$');
 		}
-		
-		System.out.println("cycle: " + cycle);
 		
 		return 0xff; // ?
 	}

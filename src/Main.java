@@ -2,31 +2,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.IOException;
+import java.util.*;
 
 public class Main
 {
-	///   ROM LENGTH   ///
-	public  static final int PROGRAM_LENGTH = 0x10_000;
-	private static final String STORAGE_INTERNAL = "~/src/";	// Change file's path
-	
-	///   SPLIT ROMS LIST   ///
-	static final String[] romName = {
-		"invaders.h",
-		"invaders.g",
-		"invaders.f",
-		"invaders.e"
-		// "cpudiag.bin"
-		// "8080EX1.COM"
-	};
-	
-	///   LOAD ADDRESS   ///
-	static final int[] romAddr = {
-		0x0000,
-		0x0800,
-		0x1000,
-		0x1800
-		//0x0100
-	};
 	
 	// MAIN
 	public static void main(String[] args) {
@@ -35,53 +14,46 @@ public class Main
 	
 	// EMULATION
 	public static void startEmulator() {
-		if(!fileExist(romName)) {
+		if(!fileExist(ProgramUtils.Rom.FILE_NAME)) {
 			return;
 		}
 		
-		new Emulation(loadRom(romName));
+		new Emulation(loadRom(ProgramUtils.Rom.FILE_NAME));
 	}
 	
 	// LOAD ROM
 	private static short[] loadRom(String[] fileName) {
-		// Prepare empty container
-		short[] holder = new short[PROGRAM_LENGTH];
+		InputStream file;
+		short read;
+		short[] holder = new short[ProgramUtils.Machine.PROGRAM_LENGTH];
 		
 		if (fileName.length > 1) {
 			
-			for(int i = 0; i < romName.length; i++) {
-				InputStream file = openFile(romName[i]);
-				short readFile = 0;
-				int currentAddr = romAddr[i];
+			for(int i = 0; i < ProgramUtils.Rom.FILE_NAME.length; i++) {
+				file = openFile(ProgramUtils.Rom.FILE_NAME[i]);
+				int currentAddr = ProgramUtils.Rom.ROM_ADDRESS[i];
 			
 				try	{
-					int counter = 0;
-				
-					while ((readFile = (short) file.read()) != -1) {
-						holder[currentAddr + counter] = readFile;
-						counter++;
+					for(int a = 0; (read = (short) file.read()) != -1; a++) {
+						holder[currentAddr + a] = read;
 					}
 				
 				} catch (IOException e) {
-					System.out.println(romAddr[i] + " cannot be read!");
-					return holder;
+					System.out.println(ProgramUtils.Rom.ROM_ADDRESS[i] + " cannot be read!");
+					return null;
 				}
 			}
 			
 		} else {
 			try {
-				InputStream file = openFile(fileName[0]);
-				short readFile = 0;
-				int counter = 0;
-				
-				while ((readFile = (short) file.read()) != -1) {
-					holder[romAddr[0] + counter] = readFile;
-					counter++;
+				file = openFile(fileName[0]);
+				for(int a = 0; (read = (short) file.read()) != -1; a++) {
+					holder[ProgramUtils.Rom.ROM_ADDRESS[0] + a] = read;
 				}
 
 			} catch (IOException e) {
-				System.out.println(romName + " cannot be read!");
-				return holder;
+				System.out.println(ProgramUtils.Rom.FILE_NAME + " cannot be read!");
+				return null;
 			}
 		}
 		
@@ -92,17 +64,17 @@ public class Main
 	private static boolean fileExist(String[] fileName) {
 		try {
 			if(fileName.length > 1) {
-				for(int i = 0; i < romName.length; i++) {
+				for(int i = 0; i < ProgramUtils.Rom.FILE_NAME.length; i++) {
 				
-					if (openFile(romName[i]) == null) {
-						System.out.println("File " + romName[i] + " could not be found.");
+					if (openFile(ProgramUtils.Rom.FILE_NAME[i]) == null) {
+						System.out.println("File " + ProgramUtils.Rom.FILE_NAME[i] + " could not be found.");
 						return false;
 					}
 				}
 			} else {
 			
 				if (openFile(fileName[0]) == null) {
-					System.out.println("No files specified..");
+					System.out.println("No files specified.");
 					return false;
 				}
 			}
@@ -112,12 +84,12 @@ public class Main
 			return false;
 		}
 		
-		if (romAddr.length == 0) {
+		if (ProgramUtils.Rom.ROM_ADDRESS.length == 0) {
 			System.out.println("File online, but no starting memory address specified.");
 			return false;
 		}
 		
-		if (romAddr.length != romName.length) {
+		if (ProgramUtils.Rom.ROM_ADDRESS.length != ProgramUtils.Rom.FILE_NAME.length) {
 			System.out.println("File online, but roms and memory address unaligned.");
 			return false;
 		}
@@ -129,7 +101,7 @@ public class Main
 	// FILE SUBROUTINE
 	private static InputStream openFile(String romName) {
 		try {
-			return new FileInputStream(STORAGE_INTERNAL + romName);
+			return new FileInputStream(ProgramUtils.Machine.STORAGE_LOCATION + romName);
 		} catch (FileNotFoundException e) {
 			return null;
 		}
