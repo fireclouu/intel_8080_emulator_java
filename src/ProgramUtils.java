@@ -11,11 +11,11 @@ public final class ProgramUtils
 			// "invaders.f", "invaders.e"
 			
 			///  TESTS  ///
-			"cpudiag.bin"
+			//"cpudiag.bin"
 			//"TST8080.COM"
 			//"8080EX1.COM"
 			//"8080EXER.COM"
-			//"8080PRE.COM"
+			"8080PRE.COM"
 			//"CPUTEST.COM"
 			//"8080EXM.COM"
 		};

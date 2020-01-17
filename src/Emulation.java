@@ -38,7 +38,7 @@ public class Emulation
 		boolean done = false;
 		
 		// Run @ 2 MHz (verify since untested)
-		while(!done) {	
+		while(!Interpreter.test_finished) {	
 			// 2MHz = execute every 5e-7 secs
 			// System.nanoTime() = billionth of a sec. (epoch)
 			/*
@@ -124,8 +124,9 @@ public class Emulation
 				return;
 			}
 			*/
-			//pTrace.printInstruction(cpu, ProgramUtils.Machine.PRINT_LESS);
+			
 			interpreter.cycle += interpreter.emulate8080(cpu);
+			//pTrace.printInstruction(cpu, ProgramUtils.Machine.PRINT_LESS);
 			//nb += interpreter.cycle;
 			//s = i.next();
 		}
