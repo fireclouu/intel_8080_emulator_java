@@ -1,4 +1,5 @@
 
+import BaseClass.*;
 public class CpuComponents
 {
 	///  PSW FLAG POSITIONS  ///
@@ -22,10 +23,17 @@ public class CpuComponents
 	public ConditionCodes cc;
 
 	///  INTERRUPT  ///
-	public boolean int_enable;
+	public byte int_enable;
 
 	// RESET / INIT
-	public CpuComponents(short memory[]) {
+	public CpuComponents() {
+		// reset components
+		cc = new ConditionCodes();
+		init();
+	}
+	
+	public void init() {
+		// init register (byte) / address (word)
 		B = 0;
 		C = 0;
 		D = 0;
@@ -36,24 +44,37 @@ public class CpuComponents
 
 		PC = 0;
 		SP = 0;
-
-		cc = new ConditionCodes();
-
-		cc.Z = 0;
-		cc.S = 0;
-		cc.P = 0;
-		cc.CY = 0;
-		cc.AC = 0;
-
-		this.memory = memory;
-
-		// int_enable = 0; ?
-		// cc.pad = 0; ?
+		
+		int_enable = 0;
+		
+		// load file on memory
+		memory = new short[AppUtils.Machine.PROGRAM_LENGTH];
+		
+		// init flags (bit)
+		cc.init();
 	}
 }
 
 class ConditionCodes
 {
+	///  FLAGS  ///
 	public byte Z, S, P, CY, AC;
-	public short pad;
+	
+	///  IN / OUT  ///
+	public byte pad;
+	
+	public ConditionCodes() {
+		// reset flags
+		init();
+	}
+	
+	public void init() {
+		// init flags (bit)
+		Z = 0;
+		S = 0;
+		P = 0;
+		CY = 0;
+		AC = 0;
+		pad = 0;
+	}
 }

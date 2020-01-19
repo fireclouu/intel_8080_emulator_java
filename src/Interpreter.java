@@ -6,9 +6,9 @@ public class Interpreter
 	// strict handling of 0xff (8 bit), 0xffff (16 bit) addresses
 	// java only offers signed data types
 
-	static boolean test_finished;
+	boolean test_finished = false;
+	static short cyc = 0;
 	static long cycle = 0;
-
 	// SOURCES: superzazu
 	static short OPCODES_CYCLES[] = {
 		//  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
@@ -34,7 +34,7 @@ public class Interpreter
 	public short emulate8080(CpuComponents cpu) {
 		// temporary containers
 		int res;
-
+	
 		// opcode
 		int opcode = cpu.PC;
 
@@ -44,6 +44,9 @@ public class Interpreter
 		// increment PC every calls
 		cpu.PC++;
 
+		// cycles
+		cyc = OPCODES_CYCLES[cpu.memory[opcode]];
+		
 		switch (cpu.memory[opcode]) {
 				/////   0x00 - 0x0f   /////
 
@@ -784,9 +787,7 @@ public class Interpreter
 				//////   0xc0 - 0xcf   /////
 
 			case 0xc0: 
-				if (cpu.cc.Z == 0) {
-					RET(cpu);
-				}
+				i8080_cond_ret(cpu, cpu.cc.Z == 0);
 				break; // RNZ
 			case 0xc1:
 				cpu.C = cpu.memory[cpu.SP];
@@ -815,9 +816,7 @@ public class Interpreter
 				GenerateInterrupt(cpu, 0x00);
 				break; // RST 0
 			case 0xc8:
-				if (cpu.cc.Z == 1) {
-					RET(cpu);
-				}
+				i8080_cond_ret(cpu, cpu.cc.Z == 1);
 				break; // RZ
 			case 0xc9:
 				RET(cpu);
@@ -844,9 +843,7 @@ public class Interpreter
 				//////   0xd0 - 0xdf   /////
 
 			case 0xd0: 
-				if (cpu.cc.CY == 0) {
-					RET(cpu);
-				}
+				i8080_cond_ret(cpu, cpu.cc.CY == 0);
 				break; // RNC
 			case 0xd1:
 				cpu.E = cpu.memory[cpu.SP];
@@ -876,9 +873,7 @@ public class Interpreter
 				GenerateInterrupt(cpu, 0x10);
 				break; // RST 2
 			case 0xd8: 
-				if (cpu.cc.CY == 1) {
-					RET(cpu);
-				}
+				i8080_cond_ret(cpu, cpu.cc.CY == 1);
 				break; // RC
 			case 0xd9:
 				break; // -
@@ -905,9 +900,7 @@ public class Interpreter
 				//////   0xe0 - 0xef   /////
 
 			case 0xe0: 
-				if (cpu.cc.P == 0) {
-					RET(cpu);
-				}
+				i8080_cond_ret(cpu, cpu.cc.P == 0);
 				break; // RPO
 			case 0xe1:
 				cpu.L = cpu.memory[cpu.SP];
@@ -936,9 +929,7 @@ public class Interpreter
 				GenerateInterrupt(cpu, 0x20);
 				break; // RST 4
 			case 0xe8: 
-				if (cpu.cc.P == 1) {
-					RET(cpu);
-				}
+				i8080_cond_ret(cpu, cpu.cc.P == 1);
 				break; // RPE
 			case 0xe9:
 				cpu.PC = addr;
@@ -965,9 +956,7 @@ public class Interpreter
 				//////   0xf0 - 0xff   /////
 
 			case 0xf0: 
-				if (cpu.cc.S == 0) {
-					RET(cpu);
-				}
+				i8080_cond_ret(cpu, cpu.cc.S == 0);
 				break; // RP
 			case 0xf1:
 				POP_PSW(cpu);
@@ -976,7 +965,7 @@ public class Interpreter
 				i8080_cond_jmp(cpu, opcode, cpu.cc.S == 0);
 				break; // JP adr
 			case 0xf3:
-				cpu.int_enable = false;
+				cpu.int_enable = 0;
 				break; // DI
 			case 0xf4:
 				i8080_cond_call(cpu, opcode, cpu.cc.S == 0);
@@ -992,9 +981,7 @@ public class Interpreter
 				GenerateInterrupt(cpu, 0x30);
 				break; // RST 6
 			case 0xf8: 
-				if (cpu.cc.S == 1) {
-					RET(cpu);
-				}
+				i8080_cond_ret(cpu, cpu.cc.S == 1);
 				break; // RM
 			case 0xf9:
 				SPHL(cpu, addr);
@@ -1003,7 +990,7 @@ public class Interpreter
 				i8080_cond_jmp(cpu, opcode, cpu.cc.S == 1);
 				break; // JM adr	
 			case 0xfb:
-				cpu.int_enable = true;
+				cpu.int_enable = 1;
 				break; // EI
 			case 0xfc:
 				i8080_cond_call(cpu, opcode, cpu.cc.S == 1);
@@ -1019,7 +1006,7 @@ public class Interpreter
 				break; // RST 7
 		}
 
-		return OPCODES_CYCLES[cpu.memory[opcode]];
+		return cyc;
 	}
 
 	/// INTERRUPT
@@ -1030,13 +1017,14 @@ public class Interpreter
 		cpu.SP = (cpu.SP - 2) & 0xffff;
 
 		cpu.PC = 8 * interrupt_num;
-		cpu.int_enable = false;
+		cpu.int_enable = 0;
 	}
 
 	/// SUBROUTINES
 	private void i8080_cond_call(CpuComponents cpu, int opcode, boolean cond) {
 		if (cond) {
 			CALL(cpu, opcode);
+			cyc += 6;
 		} else {
 			cpu.PC += 2;
 		}
@@ -1049,28 +1037,35 @@ public class Interpreter
 			cpu.PC += 2;
 		}
 	}
+	
+	private void i8080_cond_ret(CpuComponents cpu, boolean cond) {
+		if (cond) {
+			RET(cpu);
+			cyc += 6;
+		}
+	}
 
 	private void ADC(CpuComponents cpu, int var) {
 		i8080_flag_ac(cpu, cpu.A, var + cpu.cc.CY); // half carry
 		int res = (cpu.A + var) + cpu.cc.CY;
-		flags_BCD(cpu, res);
+		flags_zspc(cpu, res);
 		cpu.A = (short) (res & 0xff);
 	}
 
 	private void ADD(CpuComponents cpu, int var) {
 		i8080_flag_ac(cpu, cpu.A, var); // half carry
 		int res = cpu.A + var;
-		flags_BCD(cpu, res);
+		flags_zspc(cpu, res);
 		cpu.A = (short) (res & 0xff);
 	}
 
 	private void ANA(CpuComponents cpu, int var) {
-		i8080_flag_ac(cpu, cpu.A, var + cpu.cc.CY); // half carry
 		cpu.A = (short) (cpu.A & var);
 		flags_zsp(cpu, cpu.A);
 		cpu.cc.CY = 0;
-
-		cpu.cc.AC = 0; // 1 in 8085
+		
+		// SOURCE — superzazu
+		cpu.cc.AC = (((cpu.A | var) & 0x08) != 0) ? (byte) 1 : 0;
 	}
 
 	private void CALL(CpuComponents cpu, int opcode) {
@@ -1082,21 +1077,25 @@ public class Interpreter
 		JMP(cpu, opcode);
 	}
 
-	private void CMP(CpuComponents cpu, int var) { // blame
+	private void CMP(CpuComponents cpu, int var) {
 		// (two's) complement — defined also as "another set" e.g. another set of binary 1 is binary 0!
 		i8080_flag_ac(cpu, cpu.A, -var); // half carry
-		int res = (cpu.A + ((~var + 1))) & 0xfff; // providing 0xfff would result to java not reading its sign value, thus a positinumber
+		int res = (cpu.A - var) & 0xffff; // providing 0xfff would result to java not reading its sign value, thus a positive number
 
 		cpu.cc.Z = ((res & 0xff) == 0) ? (byte) 1 : 0;
 		cpu.cc.S = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
 		cpu.cc.P = parityFlag(res & 0xff); // ensuring only checks for 8-bit variable
 		cpu.cc.CY = (res > 0xff) ? 1: (byte) 0;
+		
+		//cpu.cc.AC = (byte) ((~((cpu.A ^ res ^ var) & 0x10) + 1) & 0x1);
+		//cpu.cc.AC = (byte) 10;
 	}
 
 	private void DAD(CpuComponents cpu, int... var) {
 		int HL = (cpu.H << 8) | cpu.L; // addr = 16bit
 
 		int pair;
+		
 		if (var.length == 2) {
 			pair = (var[0] << 8) | var[1];
 		} else {
@@ -1105,7 +1104,7 @@ public class Interpreter
 
 		int res = HL + pair; // may result greater than 16 bit, raise CY if occured
 
-		cpu.cc.CY = ((res & 0xffff_0000) > 0) ? (byte) 1 : 0; // cut all values from lower 16 bit and check if higher 16 bit has value
+		cpu.cc.CY = ((res & 0xf_0000) > 0) ? (byte) 1 : 0; // cut all values from lower 16 bit and check if higher 16 bit has value
 
 		cpu.H = (short) ((res & 0xff00) >> 8);	// store higher 8-bit to H
 		cpu.L = (short) (res & 0xff);			// store lower  8-bit to L
@@ -1128,13 +1127,10 @@ public class Interpreter
 	}
 
 	private void ORA(CpuComponents cpu, int var) {
-		int res = cpu.A | var;
+		cpu.A |= var;
 
-		flags_zsp(cpu, res);
+		flags_zsp(cpu, cpu.A);
 		cpu.cc.CY = 0; // fixed value
-
-		cpu.A = (short) (res);
-
 		cpu.cc.AC = 0;
 	}
 
@@ -1206,11 +1202,8 @@ public class Interpreter
 		i8080_flag_ac(cpu, cpu.A, -var + -cpu.cc.CY); // half carry
 		int res = (cpu.A + (-var + -cpu.cc.CY)) & 0xfff;
 		
-		cpu.cc.Z = ((res & 0xff) == 0) ? (byte) 1 : 0;
-		cpu.cc.S = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
-		cpu.cc.P = parityFlag(res & 0xff);
+		flags_zsp(cpu, res);
 		cpu.cc.CY = (res > 0xff) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff (borrowing)
-		// cpu.cc.AC = -1; // NULL 
 
 		cpu.A = (short) (res & 0xff);
 	}
@@ -1236,12 +1229,9 @@ public class Interpreter
 
 		int res = (cpu.A + (-var) & 0xfff);
 
-		cpu.cc.Z = ((res & 0xff) == 0) ? (byte) 1 : 0;
-		cpu.cc.S = ((res & 0x80) == 0x80) ? (byte) 1 : 0;
-		cpu.cc.P = parityFlag(res & 0xff);
+		flags_zsp(cpu, res);
 		cpu.cc.CY = (res > 0xff) ? 1: (byte) 0; // minuend greater than subtrahend will likely result to overflow of 0xff (borrowing)
-		// cpu.cc.AC = -1; // NULL
-
+		
 		cpu.A = (short) (res & 0xff);
 	}
 
@@ -1258,14 +1248,12 @@ public class Interpreter
 	}
 
 	private void XRA(CpuComponents cpu, int var) {
-		int res = cpu.A ^ var;
+		cpu.A ^= var;
 
-		flags_zsp(cpu, res);
-		cpu.cc.CY = 0;
-		// cpu.cc.AC = 0; // fixed?
-
-		cpu.A = (short) (res);
+		flags_zsp(cpu, cpu.A);
+		cpu.cc.CY = 0; // fixed value
 		cpu.cc.AC = 0; 
+		
 	}
 
 	private void XTHL(CpuComponents cpu) {
@@ -1281,19 +1269,17 @@ public class Interpreter
 	}
 
 	/// FLAGS
-	private void flags_BCD(CpuComponents cpu, int result) {
+	private void flags_zspc(CpuComponents cpu, int result) {
 		cpu.cc.CY = (result > 0xff) ? (byte) 1 : 0;
 		cpu.cc.Z = ((result & 0xff) == 0) ? (byte) 1 : 0;
 		cpu.cc.S = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		cpu.cc.P = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
-		// cpu.cc.AC = -1; // NULL
 	}
 
 	private void flags_zsp(CpuComponents cpu, int result) {
 		cpu.cc.Z = ((result & 0xff) == 0) ? (byte) 1 : 0;
 		cpu.cc.S = ((result & 0x80) == 0x80) ? (byte) 1 : 0;
 		cpu.cc.P = parityFlag(result & 0xff);  // ensuring only checks for 8-bit variable
-		// cpu.cc.AC = -1; // NULL
 	}
 
 	private void i8080_flag_ac(CpuComponents cpu, int... var) {
@@ -1330,28 +1316,5 @@ public class Interpreter
 	
 	private void port_out() {
 		test_finished = true;
-	}
-
-	// inits
-	public static void initComponents(CpuComponents cpu) {
-
-		cpu.PC = 0;
-		cpu.SP = 0;
-
-		cpu.A = 0;
-		cpu.B = 0;
-		cpu.C = 0;
-		cpu.D = 0;
-		cpu.E = 0;
-		cpu.H = 0;
-		cpu.L = 0;
-
-		cpu.cc.CY = 0;
-		cpu.cc.Z = 0;
-		cpu.cc.S = 0;
-		cpu.cc.P = 0;
-		cpu.cc.AC = 0;
-		
-		cpu.int_enable = false; // or null
 	}
 }

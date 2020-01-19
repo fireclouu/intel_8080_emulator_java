@@ -1,12 +1,13 @@
 
 import java.io.*;
 import BaseClass.PlatformAdapter;
+import BaseClass.*;
 
 public class Platform extends PlatformAdapter
 {
 
 	@Override
-	public void makeDisplay() {
+	public void createDisplay() {
 		// stub
 	}
 	
@@ -16,12 +17,12 @@ public class Platform extends PlatformAdapter
 		
 		try
 		{
-			fis = new FileInputStream(
-				machineUtils.STORAGE_LOCATION + romName);
+			fis = new FileInputStream(machineUtils.STORAGE_LOCATION + romName);
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
 		
 		return fis;
 	}
+	
 }
