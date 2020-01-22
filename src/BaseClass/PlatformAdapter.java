@@ -8,17 +8,15 @@ public abstract class PlatformAdapter implements Runnable
 {
 	private Thread mainThread;
 	protected Emulator emulator;
-	protected short[] file;
-	protected AppUtils.File fileUtils;
-	protected AppUtils.Machine machineUtils;
-
 	protected CpuComponents cpu;
 	protected DisplayAdapter display;
-
+	protected AppUtils.File fileUtils;
+	protected AppUtils.Machine machineUtils;
+	protected short[] file;
 	public static String OUT_MSG = "System OK!";
-	
 	public static String TEST_NAME;
-	public static int TEST_INDEX = 0;
+	public static int  TEST_INDEX = 0;
+	public static String[] BUILD_MSG;
 	
 	// Stream file
 	public abstract InputStream openFile(String romName);
@@ -31,12 +29,18 @@ public abstract class PlatformAdapter implements Runnable
 
 	// Main
 	public void startOp() {
+		// initial file check
+		if(!isAllFileOK()) {
+			OUT_MSG = "Some files could be corrupted, or no files specified";
+			System.out.println(OUT_MSG);
+			return;
+		}
+		
 		// check if file is test file
 		if (isTestFile()) {
 			startTest();
 			return;
 		}
-		
 		// Start emulation
 		startMain();
 	}
@@ -44,13 +48,10 @@ public abstract class PlatformAdapter implements Runnable
 	public void init() {
 		// initialize cpu components
 		cpu = new CpuComponents();
-		
 		// initialize emulator
 		emulator = new Emulator();
-	
 		// identify and create display
 		createDisplay();
-		
 		// display draw signal
 		display.readyToDraw = false;
 	}
@@ -58,7 +59,6 @@ public abstract class PlatformAdapter implements Runnable
 	private void startMain() {
 		// reset objects
 		init();
-		
 		// load and start emulation
 		if(loadSplitFiles() == 0) {
 			mainThread = new Thread(this);
@@ -68,13 +68,15 @@ public abstract class PlatformAdapter implements Runnable
 	
 	private void startTest() {
 		AppUtils.Machine.DEBUG = true;
-		
-		for(String name : fileUtils.FILES) {
+		BUILD_MSG = new String[fileUtils.FILES.length];
+		for (String name : fileUtils.FILES) {
+			// BUILD MSG
+			BUILD_MSG[TEST_INDEX] = "";
+			
+			// get test filename
 			TEST_NAME = name;
-
 			// reset objects
 			init();
-
 			// load file and injects
 			// SOURCE: superzazu — intel 8080 c99
 			// inject "out 1,a" at 0x0000 (signal to stop the test)
@@ -86,31 +88,42 @@ public abstract class PlatformAdapter implements Runnable
 			cpu.memory[0x0007] = 0xC9;
 			// jump pc to 0x100 (to avoid executing test_finished to true);
 			cpu.PC = 0x0100;
-
 			loadFile(name, 0x100);
-
 			// start emulation
 			mainThread = new Thread(this);
 			mainThread.start();
-
 			// avoid overlaps
 			try {
 				mainThread.join();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-
+			
+			System.out.println(BUILD_MSG[TEST_INDEX]);
+			TEST_INDEX++;
 		}
 	}
 	
+	// check all files
+	private boolean isAllFileOK() {
+		for (String files : fileUtils.FILES) {
+			if (!isAvailable(files)) return false;
+		}
+		try
+		{
+			isAvailable(fileUtils.FILES[0]);
+		} catch (ArrayIndexOutOfBoundsException e) {
+			return false;
+		}
+		
+		return true;
+	}
 	// Read and buffer file
 	public void loadFile(String filename, int addr) {
 		// read file stream
 		InputStream file = openFile(filename);
-		
 		// piece container
 		short read;
-		
 		try
 		{
 			while ((read = (short) file.read()) != -1) {
@@ -118,14 +131,12 @@ public abstract class PlatformAdapter implements Runnable
 			}
 		} catch (IOException e) {
 			OUT_MSG = filename + " cannot be read!";
-		}
-			
+		}	
 	}
 	
 	private byte loadSplitFiles() {
 		int counter = 0;
-		
-		for(String files : fileUtils.FILES) {
+		for (String files : fileUtils.FILES) {
 			if (isAvailable(files)) {
 				loadFile(files, fileUtils.ROM_ADDRESS[counter++]);
 			} else {
@@ -134,42 +145,34 @@ public abstract class PlatformAdapter implements Runnable
 				return 1; // ERROR
 			}
 		}
-		
 		return 0; // SUCCESS
 	}
 	
 	// File check
 	private boolean isAvailable(String filename) {
-
 		if (fileUtils.FILES.length == 0) {
 			OUT_MSG = "No files specified.";
 			return false;
 		}
-
 		if (fileUtils.ROM_ADDRESS.length == 0) {
 			OUT_MSG = "File online, but no starting memory address specified.";
 			return false;
 		}
-
 		if (fileUtils.ROM_ADDRESS.length != fileUtils.FILES.length) {
 			OUT_MSG = "File online, but roms and memory address unaligned.";
 			return false;
 		}
-
 		try
 		{
 			if (openFile(filename) == null) {
 				OUT_MSG = "File \"" + filename + "\" could not be found.";
 				return false;
 			}
-
 		} catch (ArrayIndexOutOfBoundsException e) {
 			e.printStackTrace();
 			return false;
 		}
-
 		OUT_MSG = "File online , loaded successfully!";
-
 		return true;
 	}
 	
@@ -186,7 +189,6 @@ public abstract class PlatformAdapter implements Runnable
 					return true;
 			}
 		}
-		
 		return false;
 	}
 }

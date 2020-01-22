@@ -107,10 +107,19 @@ public class PrintTrace
 		}
 	}
 	
+	public void check_overflow(CpuComponents cpu) {
+		if (cpu.A > 0xff | cpu.B > 0xff | cpu.C > 0xff | cpu.D > 0xff |
+			cpu.E > 0xff | cpu.H > 0xff | cpu.L > 0xff | cpu.PC > 0xffff | cpu.SP > 0xffff |
+			cpu.cc.AC > 0x1 | cpu.cc.CY > 0x1 | cpu.cc.P > 0x1 |
+			cpu.cc.S > 0x1 | cpu.cc.Z > 0x1) {
+			printInstruction(cpu, false);
+		}
+	}
+	
 	public String toHex04(int value) {
 		return String.format("%04x", value);
 	}
-
+	
 	public String toHex02(int value) {
 		return String.format("%02x", value);
 	}
